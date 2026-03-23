@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>Light Assessment — Cirqana Health</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
+<style>
+/* ─── TOKENS ─────────────────────────────── */
+:root{
+  --red:#BE1E2D;--red-dk:#96181F;--red-pale:#FDF0F1;--red-lt:#F5D0D3;
+  --black:#000;--white:#fff;--off:#F9F8F7;--lt:#F2F1EF;
+  --mid:#888;--border:rgba(0,0,0,.10);
+  --green:#8CC63E;--orange:#F89C1B;--blue:#1B75BC;--purple:#7B3E8C;
+  --r:12px;--rs:8px;
+  /* tap target min */
+  --tap:52px;
+}
+
+/* ─── RESET ──────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-weight:300;
+  background:var(--off);color:var(--black);
+  font-size:15px;line-height:1.6;min-height:100vh;
+  overscroll-behavior-y:contain;
+  -webkit-tap-highlight-color:rgba(0,0,0,0);
+}
+/* iOS Safari requires cursor:pointer for click to fire on non-anchor elements */
+button{
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;
+  -webkit-appearance:none;cursor:pointer;
+  touch-action:manipulation;
+}
+input{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;-webkit-appearance:none}
+
+/* ─── HEADER ─────────────────────────────── */
+.hdr{
+  background:var(--white);border-bottom:2.5px solid var(--red);
+  padding:0 16px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.hdr-back{
+  font-size:11px;font-weight:500;color:var(--mid);
+  text-decoration:none;text-transform:uppercase;letter-spacing:.8px;
+  padding:10px 0;
+}
+
+/* ─── HERO ───────────────────────────────── */
+.hero{
+  background:var(--black);color:var(--white);
+  padding:40px 20px 36px;text-align:center;
+}
+.hero-eye{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:14px;font-weight:500}
+.hero h1{font-size:26px;font-weight:300;line-height:1.2;margin-bottom:12px;letter-spacing:-.3px}
+.hero h1 strong{font-weight:700;color:var(--red)}
+.hero p{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px;font-weight:300;line-height:1.65}
+.pills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.pill{font-size:11px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:5px 12px}
+
+/* ─── WRAP ───────────────────────────────── */
+.wrap{max-width:540px;margin:0 auto;padding:0 14px 80px}
+
+/* ─── MODE SWITCH ────────────────────────── */
+.mode-sw{
+  display:flex;background:var(--white);border:1.5px solid var(--border);
+  border-radius:40px;padding:4px;margin:20px 0 18px;width:100%;
+}
+.mode-btn{
+  flex:1;padding:11px 8px;font-size:12px;font-weight:400;cursor:pointer;
+  border:none;background:rgba(255,255,255,0.01);color:var(--mid);border-radius:40px;
+  transition:all .2s;text-transform:uppercase;letter-spacing:.5px;
+  min-height:var(--tap);touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.1);
+}
+.mode-btn.active{background:var(--red);color:var(--white);font-weight:600}
+
+/* ─── PROGRESS ───────────────────────────── */
+.prog-wrap{margin-bottom:20px}
+.prog-top{display:flex;justify-content:space-between;font-size:11px;color:var(--mid);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-weight:400}
+.prog-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--red);border-radius:2px;transition:width .4s ease}
+.step-dots{display:flex;gap:8px;margin-top:8px}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .2s}
+.sdot.done{background:var(--red-lt)}
+.sdot.active{background:var(--red);transform:scale(1.3)}
+
+/* ─── CARD ───────────────────────────────── */
+.card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px 16px;margin-bottom:14px;
+  display:none;
+}
+.card.active{display:block}
+.card-step{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--red);margin-bottom:5px;font-weight:500}
+.card-title{font-size:20px;font-weight:300;margin-bottom:5px;line-height:1.2}
+.card-title strong{font-weight:700}
+.card-desc{font-size:12px;color:var(--mid);margin-bottom:20px;font-weight:300;line-height:1.6}
+
+/* ─── SECTION LABEL ──────────────────────── */
+.mlabel{
+  font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--black);margin:20px 0 10px;
+  display:flex;align-items:center;gap:8px;
+}
+.mlabel::after{content:'';flex:1;height:1px;background:var(--border)}
+.mlabel:first-child{margin-top:0}
+.divider{height:1px;background:var(--border);margin:18px 0}
+
+/* ─── AGE GRID ───────────────────────────── */
+.age-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.age-btn{
+  border:1.5px solid var(--border);border-radius:var(--rs);
+  padding:14px 6px;text-align:center;cursor:pointer;
+  background:rgba(255,255,255,0.01);/* iOS needs non-transparent bg to fire touch */
+  transition:border-color .2s,background .2s;min-height:86px;
+  display:block;/* avoid flex on button for iOS */
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.1);
+}
+.age-btn .age-icon{font-size:22px;display:block;margin-bottom:4px}
+.age-btn .age-name{font-size:11px;font-weight:600;color:var(--black);text-transform:uppercase;letter-spacing:.5px;line-height:1.2;display:block}
+.age-btn .age-range{font-size:10px;color:var(--mid);display:block;margin-top:2px}
+.age-btn.sel{border-color:var(--red);background:var(--red-pale)}
+.age-btn.sel .age-name{color:var(--red)}
+
+/* ─── CHIPS ──────────────────────────────── */
+.chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+.chip{
+  padding:9px 14px;border-radius:20px;font-size:12px;cursor:pointer;
+  border:1px solid var(--border);background:rgba(255,255,255,0.01);color:var(--mid);
+  transition:all .15s;font-weight:400;min-height:40px;
+  display:inline-block;line-height:1.4;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.1);
+}
+.chip.sel{color:var(--red);border-color:var(--red);background:var(--red-pale);font-weight:500}
+
+/* ─── STEPPER (replaces slider on mobile) ── */
+.step-ctrl{
+  display:flex;flex-direction:column;gap:3px;margin-bottom:14px;
+}
+.step-ctrl-label{font-size:13px;color:var(--black);font-weight:400;line-height:1.4}
+.step-ctrl-sub{font-size:11px;color:var(--mid);font-weight:300;margin-top:2px;display:block}
+.step-ctrl-row{
+  display:flex;align-items:center;gap:0;margin-top:8px;
+  background:var(--lt);border-radius:var(--rs);overflow:hidden;border:1px solid var(--border);
+}
+.step-dec,.step-inc{
+  background:rgba(255,255,255,0.01);border:none;cursor:pointer;
+  font-size:22px;font-weight:300;color:var(--red);
+  width:56px;height:52px;display:block;line-height:52px;text-align:center;
+  flex-shrink:0;transition:background .15s;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.15);
+}
+.step-dec:active,.step-inc:active{background:var(--red-pale)}
+.step-display{
+  flex:1;text-align:center;font-size:16px;font-weight:600;color:var(--black);
+  letter-spacing:.3px;padding:0 8px;
+}
+
+/* ─── TOGGLE (yes/no pill design) ────────── */
+.tog-row{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;margin-bottom:10px;
+}
+.tog-text{flex:1;min-width:0}
+.tog-label{font-size:13px;color:var(--black);font-weight:400;line-height:1.4;display:block}
+.tsub{font-size:11px;color:var(--mid);display:block;margin-top:3px;font-weight:300;line-height:1.4}
+.tog-yn{
+  display:flex;border-radius:20px;
+  border:1.5px solid var(--border);flex-shrink:0;
+  margin-top:2px;overflow:visible;/* don't clip iOS touch targets */
+  position:relative;
+}
+.tog-yn-no,.tog-yn-yes{
+  padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;
+  border:none;background:var(--lt);color:var(--mid);
+  font-family:'Montserrat',sans-serif;
+  text-transform:uppercase;letter-spacing:.5px;
+  transition:background .15s,color .15s;line-height:1;
+  min-height:34px;display:inline-block;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.15);
+}
+.tog-yn-no{
+  border-right:1px solid var(--border);
+  border-radius:18px 0 0 18px;
+}
+.tog-yn-yes{
+  border-radius:0 18px 18px 0;
+}
+.tog-yn.is-yes .tog-yn-yes{background:var(--red);color:white}
+.tog-yn.is-no  .tog-yn-no {background:var(--black);color:white}
+/* default unchecked = neither highlighted */
+
+/* ─── SEASON CHIPS (kept for internal use) ── */
+.season-row{display:flex;gap:8px;margin-bottom:10px}
+.season-row .chip{flex:1;justify-content:center;padding:12px 6px}
+
+/* ─── REGION GRID ────────────────────────── */
+.region-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.region-btn{
+  border:1.5px solid var(--border);border-radius:var(--rs);
+  padding:12px 10px;text-align:left;cursor:pointer;
+  background:rgba(255,255,255,0.01);
+  font-family:'Montserrat',sans-serif;transition:all .15s;
+  display:block;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(190,30,45,0.1);
+  width:100%;
+}
+.region-btn:active{background:var(--red-pale)}
+.region-btn.sel{border-color:var(--red);background:var(--red-pale)}
+.region-name{font-size:12px;font-weight:600;color:var(--black);display:block}
+.region-eg{font-size:10px;color:var(--mid);display:block;font-weight:300;margin-top:3px}
+.region-btn.sel .region-name{color:var(--red)}
+
+/* ─── INFO NOTE ──────────────────────────── */
+.info-note{
+  background:var(--red-pale);border-left:3px solid var(--red);
+  padding:12px 14px;border-radius:0 var(--rs) var(--rs) 0;
+  font-size:12px;color:var(--mid);line-height:1.6;margin-top:10px;font-weight:300;
+}
+.info-note strong{color:var(--black);font-weight:500}
+
+/* ─── NAV ROW ────────────────────────────── */
+.nav-row{display:flex;gap:10px;margin-top:20px}
+.btn-back{
+  padding:0 20px;border:1.5px solid var(--border);border-radius:40px;
+  background:rgba(255,255,255,0.01);font-size:11px;color:var(--mid);cursor:pointer;
+  font-weight:500;text-transform:uppercase;letter-spacing:.6px;transition:all .2s;
+  height:52px;display:inline-block;line-height:50px;
+  touch-action:manipulation;
+}
+.btn-next{
+  flex:1;height:52px;border-radius:40px;background:var(--red);border:none;
+  font-size:12px;color:white;cursor:pointer;font-weight:600;transition:all .15s;
+  display:inline-block;line-height:52px;text-align:center;
+  text-transform:uppercase;letter-spacing:.8px;
+  touch-action:manipulation;
+}
+.btn-next:active{background:var(--red-dk);transform:scale(.98)}
+
+/* ─── EMAIL GATE ──────────────────────────── */
+.email-block{padding:4px 0}
+.e-input{
+  width:100%;padding:15px 18px;border:1.5px solid var(--border);
+  border-radius:var(--rs);font-size:14px;background:var(--white);
+  color:var(--black);outline:none;transition:border-color .2s;
+  font-weight:300;margin-bottom:10px;display:block;
+}
+.e-input:focus{border-color:var(--red)}
+.btn-submit{
+  width:100%;height:54px;border-radius:var(--rs);background:var(--red);
+  border:none;font-size:13px;color:white;cursor:pointer;font-weight:600;
+  transition:all .15s;text-transform:uppercase;letter-spacing:1px;
+  touch-action:manipulation;display:block;
+}
+.btn-submit:active{background:var(--red-dk);transform:scale(.99)}
+.privacy-note{font-size:11px;color:var(--mid);margin-top:10px;text-align:center;letter-spacing:.2px}
+.email-ok{
+  display:none;text-align:center;padding:14px;background:#EDF7E6;
+  border-radius:var(--rs);border:1px solid rgba(140,198,62,.3);
+  font-size:13px;color:#4A8020;margin-top:12px;font-weight:500;
+}
+
+/* ─── KIDS TAG ───────────────────────────── */
+.kids-tag{
+  display:inline-block;padding:4px 12px;border-radius:12px;
+  background:rgba(27,117,188,.1);border:1px solid rgba(27,117,188,.25);
+  font-size:10px;color:var(--blue);margin-bottom:10px;font-weight:600;
+  letter-spacing:.8px;text-transform:uppercase;
+}
+
+/* ─── RESULTS ────────────────────────────── */
+#results-panel{display:none}
+
+.res-hero{
+  background:var(--black);color:var(--white);
+  border-radius:var(--r);padding:28px 20px 24px;margin-bottom:14px;text-align:center;
+}
+.res-eye{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--red);margin-bottom:16px;font-weight:500}
+.score-ring{position:relative;width:130px;height:130px;margin:0 auto 18px}
+.score-ring svg{display:block}
+.score-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-size:40px;font-weight:700;line-height:1}
+.score-denom{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;letter-spacing:.5px}
+.score-grade{font-size:26px;font-weight:300;margin-bottom:6px}
+.score-grade strong{font-weight:700}
+.score-tag{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;font-weight:300}
+
+.r-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px;margin-bottom:12px}
+.r-card h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--red)}
+
+/* risk bars */
+.risk-item{margin-bottom:14px}
+.risk-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;gap:8px}
+.risk-name{font-size:13px;font-weight:500;flex:1;line-height:1.3}
+.risk-badge{font-size:10px;padding:3px 10px;border-radius:12px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.risk-track{height:8px;background:var(--lt);border-radius:4px;overflow:hidden;margin-top:2px}
+.risk-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.risk-note{font-size:12px;color:var(--mid);margin-top:5px;line-height:1.55;font-weight:300}
+.risk-what{font-size:12px;color:var(--black);margin-top:7px;line-height:1.6;font-weight:300}
+.risk-syms-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--mid);margin-top:10px;margin-bottom:2px}
+.risk-syms{margin-bottom:2px;line-height:1.8}
+
+/* findings */
+.finding{display:flex;gap:10px;padding:12px;border-radius:var(--rs);margin-bottom:8px;align-items:flex-start}
+.fdot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ftext{font-size:13px;line-height:1.55;font-weight:300}
+
+/* actions */
+.action-item{display:flex;gap:12px;padding:14px;border-radius:var(--rs);margin-bottom:8px;border:1px solid var(--border);background:var(--off);align-items:flex-start}
+.action-num{width:26px;height:26px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+.action-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.action-body{font-size:12px;color:var(--mid);line-height:1.55;font-weight:300}
+
+/* unlock */
+.unlock-card{background:var(--black);border-radius:var(--r);padding:22px 18px;margin-bottom:12px;color:var(--white)}
+.unlock-card h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:4px}
+.unlock-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px;line-height:1.65;font-weight:300}
+.unlock-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;font-size:13px;color:rgba(255,255,255,.8);line-height:1.5;font-weight:300}
+.unlock-dot{width:22px;height:22px;border-radius:50%;background:rgba(190,30,45,.15);border:1px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px}
+.unlock-item strong{color:var(--white);font-weight:500}
+.unlock-cta{font-size:11px;color:rgba(255,255,255,.35);font-style:italic;margin-top:8px}
+
+/* booking */
+.book-card{background:var(--white);border:2px solid var(--red);border-radius:var(--r);padding:24px 20px;text-align:center;margin-bottom:12px}
+.book-card h3{font-size:20px;font-weight:300;margin-bottom:8px;line-height:1.25}
+.book-card h3 strong{font-weight:700;color:var(--red)}
+.book-card p{font-size:13px;color:var(--mid);margin-bottom:20px;line-height:1.65;font-weight:300}
+.btn-book{
+  display:block;width:100%;padding:16px;background:var(--red);color:white;
+  border-radius:var(--rs);text-decoration:none;font-size:13px;font-weight:600;
+  transition:all .15s;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:.8px;
+}
+.btn-book:active{background:var(--red-dk);transform:scale(.99)}
+.book-note{font-size:11px;color:var(--mid);margin-top:10px;font-style:italic}
+
+/* timeline */
+.tl-bar{height:32px;border-radius:6px;overflow:hidden;display:flex;margin:10px 0 5px}
+.tl-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:rgba(255,255,255,.85);overflow:hidden;white-space:nowrap}
+.tl-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mid)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mid)}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.pulsing{animation:pulse 2.2s ease-in-out infinite}
+
+/* footer */
+.footer{background:var(--black);color:rgba(255,255,255,.4);text-align:center;padding:24px 20px;font-size:11px;font-weight:300;margin-top:30px;letter-spacing:.3px}
+.footer a{color:var(--red);text-decoration:none}
+.footer-logo{margin-bottom:12px;display:flex;justify-content:center}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <svg viewBox="0 0 200 40" fill="none" height="38" style="display:block">
+    <g transform="translate(0,2)">
+      <circle cx="17" cy="17" r="6" fill="#BE1E2D"/>
+      <line x1="17" y1="2" x2="17" y2="7" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="17" y1="27" x2="17" y2="32" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="2" y1="17" x2="7" y2="17" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="27" y1="17" x2="32" y2="17" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="6" y1="6" x2="9.5" y2="9.5" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="24.5" y1="24.5" x2="28" y2="28" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="28" y1="6" x2="24.5" y2="9.5" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="9.5" y1="24.5" x2="6" y2="28" stroke="#BE1E2D" stroke-width="2.2" stroke-linecap="round"/>
+    </g>
+    <text x="40" y="22" font-family="Montserrat,sans-serif" font-weight="700" font-size="16" fill="#000" letter-spacing="2.5">CIRQANA</text>
+    <text x="40" y="34" font-family="Montserrat,sans-serif" font-weight="300" font-size="7.5" fill="#888" letter-spacing="2.5">HEALTH</text>
+  </svg>
+  <a href="https://www.cirqanahealth.ca" class="hdr-back" target="_blank">← Site</a>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eye">Free Assessment</div>
+  <h1>How is your light<br><strong>affecting your health?</strong></h1>
+  <p>A few quick questions about your daily light exposure. Get a personalised report — free to your inbox.</p>
+  <div class="pills">
+    <span class="pill">⏱ 3–4 minutes</span>
+    <span class="pill">Dr. Jack Kruse's principles</span>
+    <span class="pill">Free results by email</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="wrap">
+
+  <div class="mode-sw" id="modeSW">
+    <button class="mode-btn active" id="modeA" onclick="setMode('adult')">For Me (Adult / Teen)</button>
+    <button class="mode-btn" id="modeK" onclick="setMode('kids')">For My Child</button>
+  </div>
+
+  <div class="prog-wrap" id="progWrap">
+    <div class="prog-top"><span id="stepLbl">Step 1 of 4</span><span id="stepNm">Your profile</span></div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:25%"></div></div>
+    <div class="step-dots" id="stepDots"></div>
+  </div>
+
+  <!-- ══════ ADULT FLOW ══════ -->
+  <div id="aFlow">
+
+    <!-- A1 PROFILE -->
+    <div class="card active" id="a-s1">
+      <div class="card-step">Step 1 of 4</div>
+      <div class="card-title">Your <strong>profile</strong></div>
+      <div class="card-desc">Light needs shift with age — this personalises your results.</div>
+
+      <div class="mlabel">Age group</div>
+      <div class="age-grid" id="ageGrid"></div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Health conditions <span style="font-weight:300;letter-spacing:0;text-transform:none;font-size:11px;color:var(--mid)">select all</span></div>
+      <div class="chip-grid" id="condChips"></div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Current symptoms <span style="font-weight:300;letter-spacing:0;text-transform:none;font-size:11px;color:var(--mid)">select all</span></div>
+      <div class="chip-grid" id="symChips"></div>
+
+      <div class="nav-row" style="justify-content:flex-end">
+        <button class="btn-next" onclick="goStep('adult',2)">Morning habits →</button>
+      </div>
+    </div>
+
+    <!-- A2 MORNING -->
+    <div class="card" id="a-s2">
+      <div class="card-step">Step 2 of 4</div>
+      <div class="card-title">Your <strong>morning light</strong></div>
+      <div class="card-desc">The first light of the day is your body's most powerful signal. This step matters most.</div>
+
+      <div class="mlabel">Sunrise & morning</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">How many minutes after sunrise do you wake up?<span class="step-ctrl-sub">0 = you wake at or before sunrise</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('wakeDelay',-15)">−</button>
+          <div class="step-display" id="wakeDelay-disp">60 min</div>
+          <button class="step-inc" onclick="adj('wakeDelay',15)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="wakeDelay" value="60">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Minutes outside in the first 2 hours of the day<span class="step-ctrl-sub">Bare-eyed, not through glass or windows</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('sunriseExp',-5)">−</button>
+          <div class="step-display" id="sunriseExp-disp">0 min</div>
+          <button class="step-inc" onclick="adj('sunriseExp',5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="sunriseExp" value="0">
+
+      <div class="divider"></div>
+
+      <input type="hidden" id="sawSunrise" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I watch the sunrise bare-eyed (not through glass)</span><span class="tsub">The single most important action in this framework</span></div>
+        <div class="tog-yn" id="yn-sawSunrise"><button class="tog-yn-no" onclick="setTog('sawSunrise',false)">No</button><button class="tog-yn-yes" onclick="setTog('sawSunrise',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="grounding" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I go outside with bare feet during morning sun</span><span class="tsub">Grounding amplifies the photonic signal</span></div>
+        <div class="tog-yn" id="yn-grounding"><button class="tog-yn-no" onclick="setTog('grounding',false)">No</button><button class="tog-yn-yes" onclick="setTog('grounding',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="sunglasses" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I wear sunglasses in the morning</span><span class="tsub">Blocks UV-A/IR-A — even clear lenses reduce the signal</span></div>
+        <div class="tog-yn" id="yn-sunglasses"><button class="tog-yn-no" onclick="setTog('sunglasses',false)">No</button><button class="tog-yn-yes" onclick="setTog('sunglasses',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="morningScreen" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Phone or TV in the first 30 min after waking</span><span class="tsub">Screen before sun disrupts the AM dopamine cascade</span></div>
+        <div class="tog-yn" id="yn-morningScreen"><button class="tog-yn-no" onclick="setTog('morningScreen',false)">No</button><button class="tog-yn-yes" onclick="setTog('morningScreen',true)">Yes</button></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep('adult',1)">←</button>
+        <button class="btn-next" onclick="goStep('adult',3)">Daytime & evening →</button>
+      </div>
+    </div>
+
+    <!-- A3 DAY + EVENING -->
+    <div class="card" id="a-s3">
+      <div class="card-step">Step 3 of 4</div>
+      <div class="card-title">Daytime & <strong>evening</strong></div>
+      <div class="card-desc">The middle and end of your day determine whether your body's repair signals are protected or suppressed.</div>
+
+      <div class="mlabel">During the day</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours under artificial light (office, indoors)<span class="step-ctrl-sub">LED, fluorescent, overhead lighting</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('artHours',-1)">−</button>
+          <div class="step-display" id="artHours-disp">8 hrs</div>
+          <button class="step-inc" onclick="adj('artHours',1)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="artHours" value="8">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours of outdoor daylight<span class="step-ctrl-sub">Direct sun — not through a window or glass</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('dayLight',-0.5)">−</button>
+          <div class="step-display" id="dayLight-disp">0 hrs</div>
+          <button class="step-inc" onclick="adj('dayLight',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="dayLight" value="0">
+
+      <input type="hidden" id="nearWindow" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I spend the day near a window (not outdoors)</span><span class="tsub">Glass blocks UV-A/UV-B — it counts as artificial light</span></div>
+        <div class="tog-yn" id="yn-nearWindow"><button class="tog-yn-no" onclick="setTog('nearWindow',false)">No</button><button class="tog-yn-yes" onclick="setTog('nearWindow',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="screens" value="1">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I use screens (computer, phone) most of the day</span><span class="tsub">Blue-rich light with no IR or UV to balance it</span></div>
+        <div class="tog-yn is-yes" id="yn-screens"><button class="tog-yn-no" onclick="setTog('screens',false)">No</button><button class="tog-yn-yes" onclick="setTog('screens',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="bareSkin" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I expose bare skin (arms, face) to direct outdoor sun</span><span class="tsub">Skin is a photoreceptor organ — covered skin gets no POMC signal</span></div>
+        <div class="tog-yn" id="yn-bareSkin"><button class="tog-yn-no" onclick="setTog('bareSkin',false)">No</button><button class="tog-yn-yes" onclick="setTog('bareSkin',true)">Yes</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Your commute</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours spent in a vehicle each day<span class="step-ctrl-sub">Commuting, errands, school run — any time inside a car</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('commuteHours',-0.5)">−</button>
+          <div class="step-display" id="commuteHours-disp">1 hrs</div>
+          <button class="step-inc" onclick="adj('commuteHours',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="commuteHours" value="1">
+
+      <input type="hidden" id="drivesEV" value="0">
+      <div class="tog-row">
+        <div class="tog-text">
+          <span class="tog-label">I drive or regularly ride in an electric vehicle (EV)</span>
+          <span class="tsub">EVs generate strong ELF magnetic fields from the motor, inverter, battery and high-voltage cables — your body sits inside this field during every trip</span>
+        </div>
+        <div class="tog-yn" id="yn-drivesEV"><button class="tog-yn-no" onclick="setTog('drivesEV',false)">No</button><button class="tog-yn-yes" onclick="setTog('drivesEV',true)">Yes</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Evening & bedtime</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours of LED / overhead lights at home after sunset</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('eveLED',-0.5)">−</button>
+          <div class="step-display" id="eveLED-disp">3 hrs</div>
+          <button class="step-inc" onclick="adj('eveLED',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="eveLED" value="3">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours of screens before bed (TV, phone, tablet)<span class="step-ctrl-sub">In the 3 hours before sleep</span></div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('tvTime',-0.5)">−</button>
+          <div class="step-display" id="tvTime-disp">2 hrs</div>
+          <button class="step-inc" onclick="adj('tvTime',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="tvTime" value="2">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Minutes of darkness or dim light before sleep</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('darkTime',-5)">−</button>
+          <div class="step-display" id="darkTime-disp">5 min</div>
+          <button class="step-inc" onclick="adj('darkTime',5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="darkTime" value="5">
+
+      <input type="hidden" id="sawSunset" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I watch the sunset</span><span class="tsub">Signals end of high-UV day — begins the melatonin transition</span></div>
+        <div class="tog-yn" id="yn-sawSunset"><button class="tog-yn-no" onclick="setTog('sawSunset',false)">No</button><button class="tog-yn-yes" onclick="setTog('sawSunset',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="redLight" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">I use red or amber light in the evening</span><span class="tsub">Doesn't suppress melatonin — supports mitochondrial repair</span></div>
+        <div class="tog-yn" id="yn-redLight"><button class="tog-yn-no" onclick="setTog('redLight',false)">No</button><button class="tog-yn-yes" onclick="setTog('redLight',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="darkRoom" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">My bedroom is fully dark when I sleep</span><span class="tsub">Any light suppresses mitochondrial melatonin in every cell</span></div>
+        <div class="tog-yn" id="yn-darkRoom"><button class="tog-yn-no" onclick="setTog('darkRoom',false)">No</button><button class="tog-yn-yes" onclick="setTog('darkRoom',true)">Yes</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Where do you live?</div>
+      <p style="font-size:12px;color:var(--mid);margin-bottom:12px;font-weight:300">This tells us your UV-B availability — it changes significantly by region and time of year. <em>Season is detected automatically.</em></p>
+      <div class="region-grid" id="regionGrid"></div>
+      <input type="hidden" id="selRegion" value="canada_east">
+      <div class="info-note" id="regionNote"><strong>Eastern Canada:</strong> UV-B is strong May–Sep, very limited Oct–Apr. Winter sunlight cannot produce Vitamin D3.</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--mid);font-weight:300">
+        Season auto-detected from today's date: <strong id="seasonDetected" style="color:var(--black)"></strong>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep('adult',2)">←</button>
+        <button class="btn-next" onclick="goStep('adult',4)">See your results →</button>
+      </div>
+    </div>
+
+    <!-- A4 EMAIL -->
+    <div class="card" id="a-s4">
+      <div class="card-step">Step 4 of 4</div>
+      <div class="card-title">Your report is <strong>ready</strong></div>
+      <div class="card-desc">Enter your details to unlock your personalised Light Assessment and receive a copy by email.</div>
+      <div class="email-block">
+        <input class="e-input" type="text" id="userName" placeholder="First name" autocomplete="given-name">
+        <input class="e-input" type="email" id="userEmail" placeholder="Email address" autocomplete="email" inputmode="email">
+        <button class="btn-submit" onclick="submitAndShow()">Show my results →</button>
+        <div class="privacy-note">Results emailed to you. We never share your data.</div>
+        <div class="email-ok" id="emailOK">✓ A copy has been sent to your inbox</div>
+      </div>
+      <div class="nav-row" style="justify-content:flex-start;margin-top:16px">
+        <button class="btn-back" onclick="goStep('adult',3)">← Back</button>
+      </div>
+    </div>
+
+  </div><!-- /aFlow -->
+
+  <!-- ══════ KIDS FLOW ══════ -->
+  <div id="kFlow" style="display:none">
+
+    <!-- K1 -->
+    <div class="card active" id="k-s1">
+      <div class="card-step">Step 1 of 4</div>
+      <div class="kids-tag">Child Assessment</div>
+      <div class="card-title">Your child's <strong>profile</strong></div>
+      <div class="card-desc">Children's developing eyes and brains are more sensitive to light disruption — and recover faster.</div>
+
+      <div class="mlabel">Child's age</div>
+      <div class="age-grid" id="kAgeGrid"></div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Symptoms you notice <span style="font-weight:300;letter-spacing:0;text-transform:none;font-size:11px;color:var(--mid)">select all</span></div>
+      <div class="chip-grid" id="kSymChips"></div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Diagnosed conditions</div>
+      <div class="chip-grid" id="kCondChips"></div>
+
+      <div class="nav-row" style="justify-content:flex-end">
+        <button class="btn-next" onclick="goStep('kids',2)">Morning routine →</button>
+      </div>
+    </div>
+
+    <!-- K2 -->
+    <div class="card" id="k-s2">
+      <div class="card-step">Step 2 of 4</div>
+      <div class="kids-tag">Child Assessment</div>
+      <div class="card-title">Morning & <strong>school</strong></div>
+      <div class="card-desc">How much light does your child get from wake-up through the school day?</div>
+
+      <div class="mlabel">Morning at home</div>
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Minutes outside before school</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_morningOut',-5)">−</button>
+          <div class="step-display" id="k_morningOut-disp">0 min</div>
+          <button class="step-inc" onclick="adj('k_morningOut',5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_morningOut" value="0">
+
+      <input type="hidden" id="k_sawMorningSun" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Child sees morning sun outside before school</span><span class="tsub">Through a window doesn't count — glass blocks UV-A and IR-A</span></div>
+        <div class="tog-yn" id="yn-k_sawMorningSun"><button class="tog-yn-no" onclick="setTog('k_sawMorningSun',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_sawMorningSun',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="k_preSchoolScreen" value="1">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Screens (TV, tablet, phone) before school</span><span class="tsub">Blunts the AM dopamine signal before it can build</span></div>
+        <div class="tog-yn is-yes" id="yn-k_preSchoolScreen"><button class="tog-yn-no" onclick="setTog('k_preSchoolScreen',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_preSchoolScreen',true)">Yes</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="mlabel">At school</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours in classroom under artificial light</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_classHours',-1)">−</button>
+          <div class="step-display" id="k_classHours-disp">6 hrs</div>
+          <button class="step-inc" onclick="adj('k_classHours',1)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_classHours" value="6">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Outdoor recess + PE (total minutes)</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_recessTime',-5)">−</button>
+          <div class="step-display" id="k_recessTime-disp">20 min</div>
+          <button class="step-inc" onclick="adj('k_recessTime',5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_recessTime" value="20">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours on school screens or tablets</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_schoolScreen',-0.5)">−</button>
+          <div class="step-display" id="k_schoolScreen-disp">2 hrs</div>
+          <button class="step-inc" onclick="adj('k_schoolScreen',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_schoolScreen" value="2">
+
+      <input type="hidden" id="k_classWindows" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Classroom has windows with natural light visible</span></div>
+        <div class="tog-yn" id="yn-k_classWindows"><button class="tog-yn-no" onclick="setTog('k_classWindows',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_classWindows',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="k_lunchOut" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Lunch break spent outdoors</span></div>
+        <div class="tog-yn" id="yn-k_lunchOut"><button class="tog-yn-no" onclick="setTog('k_lunchOut',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_lunchOut',true)">Yes</button></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep('kids',1)">←</button>
+        <button class="btn-next" onclick="goStep('kids',3)">After school & bedtime →</button>
+      </div>
+    </div>
+
+    <!-- K3 -->
+    <div class="card" id="k-s3">
+      <div class="card-step">Step 3 of 4</div>
+      <div class="kids-tag">Child Assessment</div>
+      <div class="card-title">After school & <strong>bedtime</strong></div>
+      <div class="card-desc">Evening light is especially powerful for children — their melatonin is suppressed faster than adults.</div>
+
+      <div class="mlabel">After school</div>
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Minutes of outdoor play after school</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_afterOut',-10)">−</button>
+          <div class="step-display" id="k_afterOut-disp">15 min</div>
+          <button class="step-inc" onclick="adj('k_afterOut',10)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_afterOut" value="15">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours on screens after school (TV, games, phone)</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_afterScreen',-0.5)">−</button>
+          <div class="step-display" id="k_afterScreen-disp">2 hrs</div>
+          <button class="step-inc" onclick="adj('k_afterScreen',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_afterScreen" value="2">
+
+      <input type="hidden" id="k_sports" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Child does outdoor sport or activity after school</span></div>
+        <div class="tog-yn" id="yn-k_sports"><button class="tog-yn-no" onclick="setTog('k_sports',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_sports',true)">Yes</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="mlabel">Evening & sleep</div>
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Hours of screens before bed</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_eveScreen',-0.5)">−</button>
+          <div class="step-display" id="k_eveScreen-disp">2 hrs</div>
+          <button class="step-inc" onclick="adj('k_eveScreen',0.5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_eveScreen" value="2">
+
+      <div class="step-ctrl">
+        <div class="step-ctrl-label">Minutes of dim/dark wind-down before sleep</div>
+        <div class="step-ctrl-row">
+          <button class="step-dec" onclick="adj('k_darkTime',-5)">−</button>
+          <div class="step-display" id="k_darkTime-disp">5 min</div>
+          <button class="step-inc" onclick="adj('k_darkTime',5)">+</button>
+        </div>
+      </div>
+      <input type="hidden" id="k_darkTime" value="5">
+
+      <input type="hidden" id="k_nightLight" value="1">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">LED or white night light in the bedroom</span><span class="tsub">Suppresses melatonin through the entire night</span></div>
+        <div class="tog-yn is-yes" id="yn-k_nightLight"><button class="tog-yn-no" onclick="setTog('k_nightLight',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_nightLight',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="k_blackout" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">Bedroom is fully dark (blackout curtains)</span><span class="tsub">Complete darkness maximises growth hormone and brain repair</span></div>
+        <div class="tog-yn" id="yn-k_blackout"><button class="tog-yn-no" onclick="setTog('k_blackout',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_blackout',true)">Yes</button></div>
+      </div>
+      <input type="hidden" id="k_redNight" value="0">
+      <div class="tog-row">
+        <div class="tog-text"><span class="tog-label">If night light — it is red or amber (not white / blue)</span></div>
+        <div class="tog-yn" id="yn-k_redNight"><button class="tog-yn-no" onclick="setTog('k_redNight',false)">No</button><button class="tog-yn-yes" onclick="setTog('k_redNight',true)">Yes</button></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep('kids',2)">←</button>
+        <button class="btn-next" onclick="goStep('kids',4)">See results →</button>
+      </div>
+    </div>
+
+    <!-- K4 EMAIL -->
+    <div class="card" id="k-s4">
+      <div class="card-step">Step 4 of 4</div>
+      <div class="kids-tag">Child Assessment</div>
+      <div class="card-title">Your child's report is <strong>ready</strong></div>
+      <div class="card-desc">Enter your details to unlock the results and receive a copy by email.</div>
+      <div class="email-block">
+        <input class="e-input" type="text" id="k_userName" placeholder="Your name (parent)" autocomplete="given-name">
+        <input class="e-input" type="email" id="k_userEmail" placeholder="Email address" autocomplete="email" inputmode="email">
+        <button class="btn-submit" onclick="kSubmitAndShow()">Show results →</button>
+        <div class="privacy-note">Results emailed to you. We never share your data.</div>
+        <div class="email-ok" id="k_emailOK">✓ A copy has been sent to your inbox</div>
+      </div>
+      <div class="nav-row" style="justify-content:flex-start;margin-top:16px">
+        <button class="btn-back" onclick="goStep('kids',3)">← Back</button>
+      </div>
+    </div>
+
+  </div><!-- /kFlow -->
+
+  <!-- ══════ RESULTS ══════ -->
+  <div id="results-panel">
+
+    <div class="res-hero">
+      <div class="res-eye" id="r_greet">Your Light Environment Report</div>
+      <div class="score-ring">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="10"/>
+          <circle id="r_arc" cx="65" cy="65" r="55" fill="none" stroke="#BE1E2D" stroke-width="10"
+            stroke-dasharray="346" stroke-dashoffset="242" stroke-linecap="round"
+            transform="rotate(-90 65 65)" style="transition:stroke-dashoffset .7s ease"/>
+        </svg>
+        <div class="score-inner">
+          <div class="score-num" id="r_num" style="color:#BE1E2D">30</div>
+          <div class="score-denom">OUT OF 100</div>
+        </div>
+      </div>
+      <div class="score-grade">Your score: <strong id="r_grade">Poor</strong></div>
+      <div class="score-tag" id="r_tag"></div>
+    </div>
+
+    <div class="r-card" id="r_tlCard">
+      <h3>Your day in light</h3>
+      <div class="tl-bar" id="r_tl"></div>
+      <div class="tl-labels" id="r_tlLbls"></div>
+      <div class="legend" id="r_leg"></div>
+    </div>
+
+    <div class="r-card"><h3>Your active light risks</h3><div id="r_risks"></div></div>
+    <div class="r-card"><h3>What we found</h3><div id="r_findings"></div></div>
+    <div class="r-card"><h3>Your top 3 changes</h3><div id="r_actions"></div></div>
+
+    <div class="unlock-card">
+      <h3>There's more to your picture</h3>
+      <div class="unlock-sub">Your light environment is one piece of a larger puzzle. These factors interact with your results — and we haven't explored them yet.</div>
+      <div id="r_unlock"></div>
+      <div class="unlock-cta">Book a call with Emmanuela to explore what these mean for you →</div>
+    </div>
+
+    <div class="book-card">
+      <h3>Want to understand the <strong>full picture?</strong></h3>
+      <p>Book a free 30-minute discovery call with Emmanuela. We'll go through your results together, map what these principles mean for your unique situation, and build a plan.</p>
+      <a href="https://calendly.com/cirqanahealth/30minHome" target="_blank" class="btn-book">Book your free discovery call →</a>
+      <div class="book-note">No pressure. Just a conversation. You'll leave with clarity.</div>
+    </div>
+
+    <div style="text-align:center;margin-top:12px;padding-bottom:20px">
+      <button class="btn-back" style="margin:0 auto" onclick="startOver()">← Start over</button>
+    </div>
+
+  </div><!-- /results -->
+
+</div><!-- /wrap -->
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">
+    <svg viewBox="0 0 160 36" fill="none" height="32">
+      <g transform="translate(0,1)">
+        <circle cx="15" cy="15" r="5.5" fill="#BE1E2D"/>
+        <line x1="15" y1="2" x2="15" y2="6.5" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="15" y1="23.5" x2="15" y2="28" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="2" y1="15" x2="6.5" y2="15" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="23.5" y1="15" x2="28" y2="15" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="5.5" y1="5.5" x2="8.5" y2="8.5" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="21.5" y1="21.5" x2="24.5" y2="24.5" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="24.5" y1="5.5" x2="21.5" y2="8.5" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+        <line x1="8.5" y1="21.5" x2="5.5" y2="24.5" stroke="#BE1E2D" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <text x="36" y="20" font-family="Montserrat,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.65)" letter-spacing="2">CIRQANA</text>
+      <text x="36" y="30" font-family="Montserrat,sans-serif" font-weight="300" font-size="7" fill="rgba(255,255,255,.3)" letter-spacing="2">HEALTH</text>
+    </svg>
+  </div>
+  <p>© 2025 <a href="https://www.cirqanahealth.ca" target="_blank">Cirqana Health</a> — Nature-based health coaching with Emmanuela</p>
+  <p style="margin-top:4px">Educational purposes only — not medical advice.</p>
+</footer>
+
+<script>
+// ── DATA ────────────────────────────────────────
+const AGE_GROUPS=[
+  {id:'a13',icon:'🧑',name:'Teen',range:'13–17',sunTgt:120,mult:1.2},
+  {id:'a25',icon:'🧑',name:'Young adult',range:'18–35',sunTgt:120,mult:1.0},
+  {id:'a35',icon:'🧑‍💼',name:'Mid adult',range:'36–50',sunTgt:150,mult:1.1},
+  {id:'a50',icon:'🧓',name:'Mature adult',range:'51–65',sunTgt:180,mult:1.3},
+  {id:'a65',icon:'👴',name:'Senior',range:'65+',sunTgt:210,mult:1.5},
+];
+const KIDS_AGES=[
+  {id:'k3',icon:'🧒',name:'Toddler',range:'3–5 yrs',sunTgt:180,screenLim:1},
+  {id:'k6',icon:'🧒',name:'Early school',range:'6–9 yrs',sunTgt:180,screenLim:2},
+  {id:'k10',icon:'🧒',name:'Pre-teen',range:'10–12 yrs',sunTgt:150,screenLim:2},
+];
+const CONDS=[
+  {id:'depression',label:'Depression / anxiety'},
+  {id:'insomnia',label:'Poor sleep / insomnia'},
+  {id:'obesity',label:'Weight gain / obesity'},
+  {id:'diabetes',label:'Diabetes / insulin resistance'},
+  {id:'thyroid',label:'Thyroid condition'},
+  {id:'autoimmune',label:'Autoimmune condition'},
+  {id:'cancer',label:'Cancer history'},
+  {id:'cardio',label:'Heart / blood pressure'},
+  {id:'adhd',label:'ADHD / focus issues'},
+  {id:'hormonal',label:'Hormonal imbalance'},
+  {id:'migraine',label:'Migraines / headaches'},
+];
+const SYMS=[
+  {id:'fatigue',label:'Chronic fatigue'},
+  {id:'brain_fog',label:'Brain fog'},
+  {id:'mood',label:'Mood swings'},
+  {id:'sleep',label:'Trouble falling asleep'},
+  {id:'weight',label:"Can't lose weight"},
+  {id:'afternoon',label:'Afternoon crash'},
+  {id:'waking3',label:'Waking at 3am'},
+  {id:'anxiety',label:'Anxiety'},
+  {id:'eyestrain',label:'Eye strain'},
+  {id:'sugar',label:'Sugar cravings'},
+];
+const KIDS_CONDS=[
+  {id:'adhd_k',label:'ADHD / attention'},
+  {id:'myopia',label:'Myopia / glasses'},
+  {id:'autism',label:'Autism spectrum'},
+  {id:'anx_k',label:'Anxiety'},
+  {id:'sleep_k',label:'Sleep disorder'},
+];
+const KIDS_SYMS=[
+  {id:'hyper',label:'Hyperactivity'},
+  {id:'tantrums',label:'Meltdowns / tantrums'},
+  {id:'cant_sleep',label:'Trouble sleeping'},
+  {id:'focus_k',label:'Poor focus at school'},
+  {id:'squint',label:'Squinting / eye strain'},
+  {id:'head_k',label:'Headaches after screens'},
+  {id:'tired_k',label:'Always tired'},
+  {id:'mood_k',label:'Mood crash after school'},
+  {id:'night_wk',label:'Night waking'},
+];
+
+// ── STATE ────────────────────────────────────────
+let mode='adult';
+// Season derived from current date automatically
+function getCurrentSeason(){
+  const m=new Date().getMonth(); // 0=Jan
+  if(m>=5&&m<=8) return'summer';   // Jun–Sep
+  if(m>=3&&m<=4||m>=9&&m<=10) return'spring'; // Apr–May, Oct–Nov
+  return'winter'; // Dec–Mar
+}
+
+// Regions: {id, name, eg, lat, uvNote}
+const REGIONS=[
+  {id:'canada_east',   name:'Eastern Canada',   eg:'Toronto, Montreal, Ottawa',  lat:45, uvNote:'UV-B strong May–Sep, very limited Oct–Apr. Winter sun cannot produce Vitamin D3.'},
+  {id:'canada_west',   name:'Western Canada',   eg:'Vancouver, Calgary, Victoria',lat:49, uvNote:'UV-B limited Oct–Mar due to latitude and cloud cover. Summer months are excellent.'},
+  {id:'canada_north',  name:'Northern Canada',  eg:'Yukon, NWT, Nunavut',        lat:62, uvNote:'Very limited UV-B except mid-summer. Significant Vitamin D3 deficiency risk most of the year.'},
+  {id:'usa_south',     name:'Southern USA',     eg:'Florida, Texas, California',  lat:28, uvNote:'Strong UV-B year-round. Even winter months produce Vitamin D3. Excellent sun potential.'},
+  {id:'usa_mid',       name:'Central / Mid USA',eg:'Chicago, Denver, New York',   lat:41, uvNote:'Good UV-B Apr–Oct, limited Nov–Mar. Winter supplementation strategy worth exploring.'},
+  {id:'usa_north',     name:'Northern USA',     eg:'Minnesota, Seattle, Maine',   lat:47, uvNote:'UV-B limited Oct–Mar. Similar to Eastern Canada — winter sun insufficient for Vitamin D3.'},
+  {id:'uk_ireland',    name:'UK & Ireland',     eg:'London, Dublin, Edinburgh',   lat:52, uvNote:'UV-B only May–Sep and only at midday. One of the highest Vitamin D3 deficiency regions.'},
+  {id:'europe_north',  name:'Northern Europe',  eg:'Scandinavia, Germany, Poland',lat:54, uvNote:'Very limited UV-B outside summer. Requires the most sunlight compensation of any region.'},
+  {id:'europe_south',  name:'Southern Europe',  eg:'Spain, Italy, Greece',       lat:40, uvNote:'Strong UV-B Apr–Oct. Good solar potential — but indoor lifestyles still cause deficiency.'},
+  {id:'australia_nz',  name:'Australia & NZ',   eg:'Sydney, Melbourne, Auckland', lat:-33,uvNote:'Strong UV-B year-round in the north. Excellent solar potential — UV intensity is high.'},
+  {id:'tropics',       name:'Tropics / Caribbean',eg:'Jamaica, Mexico, Singapore',lat:10, uvNote:'Excellent UV-B year-round. Highest solar potential — the gold standard environment.'},
+  {id:'other',         name:'Other / Unsure',   eg:'Enter your best guess',      lat:45, uvNote:'We\'ve estimated based on a mid-latitude location. Your results may vary slightly.'},
+];
+
+let selRegion='canada_east';
+let selAge='a35', selKAge='k6';
+let selC=new Set(), selS=new Set(), selKC=new Set(), selKS=new Set();
+
+function pickRegion(id){
+  selRegion=id;
+  document.querySelectorAll('.region-btn').forEach(b=>b.classList.remove('sel'));
+  const btn=document.getElementById('rb-'+id);
+  if(btn) btn.classList.add('sel');
+  document.getElementById('selRegion').value=id;
+  const reg=REGIONS.find(r=>r.id===id);
+  if(reg) document.getElementById('regionNote').innerHTML=`<strong>${reg.name}:</strong> ${reg.uvNote}`;
+}
+
+function getRegionData(){
+  return REGIONS.find(r=>r.id===selRegion)||REGIONS[0];
+}
+
+function buildRegionGrid(){
+  const g=document.getElementById('regionGrid');
+  if(!g) return;
+  g.innerHTML=REGIONS.map(r=>`
+    <button class="region-btn ${r.id===selRegion?'sel':''}" id="rb-${r.id}" onclick="pickRegion('${r.id}')">
+      <span class="region-name">${r.name}</span>
+      <span class="region-eg">${r.eg}</span>
+    </button>`).join('');
+}
+
+// stepper values with bounds
+const STEPPERS={
+  wakeDelay:{val:60,min:0,max:120,step:15,fmt:v=>v+' min'},
+  sunriseExp:{val:0,min:0,max:60,step:5,fmt:v=>v+' min'},
+  artHours:{val:8,min:0,max:14,step:1,fmt:v=>v+' hrs'},
+  dayLight:{val:0,min:0,max:10,step:0.5,fmt:v=>v+' hrs'},
+  eveLED:{val:3,min:0,max:6,step:0.5,fmt:v=>v+' hrs'},
+  tvTime:{val:2,min:0,max:4,step:0.5,fmt:v=>v+' hrs'},
+  darkTime:{val:5,min:0,max:90,step:5,fmt:v=>v+' min'},
+  commuteHours:{val:1,min:0,max:6,step:0.5,fmt:v=>v+' hrs'},
+  k_morningOut:{val:0,min:0,max:60,step:5,fmt:v=>v+' min'},
+  k_classHours:{val:6,min:0,max:8,step:1,fmt:v=>v+' hrs'},
+  k_recessTime:{val:20,min:0,max:120,step:5,fmt:v=>v+' min'},
+  k_schoolScreen:{val:2,min:0,max:6,step:0.5,fmt:v=>v+' hrs'},
+  k_afterOut:{val:15,min:0,max:180,step:10,fmt:v=>v+' min'},
+  k_afterScreen:{val:2,min:0,max:5,step:0.5,fmt:v=>v+' hrs'},
+  k_eveScreen:{val:2,min:0,max:4,step:0.5,fmt:v=>v+' hrs'},
+  k_darkTime:{val:5,min:0,max:90,step:5,fmt:v=>v+' min'},
+};
+
+function adj(id, delta){
+  var s=STEPPERS[id];
+  if(!s) return;
+  s.val=Math.max(s.min, Math.min(s.max, parseFloat((s.val+delta).toFixed(1))));
+  var el=document.getElementById(id);
+  var disp=document.getElementById(id+'-disp');
+  if(el) el.value=s.val;
+  if(disp) disp.textContent=s.fmt(s.val);
+}
+
+function setTog(id,val){
+  var el=document.getElementById(id);
+  if(el) el.value=val?'1':'0';
+  var yn=document.getElementById('yn-'+id);
+  if(yn){
+    if(val){yn.classList.add('is-yes');yn.classList.remove('is-no');}
+    else{yn.classList.remove('is-yes');yn.classList.add('is-no');}
+  }
+}
+
+function gv(id){var el=document.getElementById(id);return el?parseFloat(el.value)||0:0;}
+function gb(id){var el=document.getElementById(id);return el?el.value==='1':false;}
+
+// ── INIT ────────────────────────────────────────
+function init(){
+  buildAgeGrid('ageGrid',AGE_GROUPS,selAge);
+  buildAgeGrid('kAgeGrid',KIDS_AGES,selKAge);
+  buildChips('condChips',CONDS,selC);
+  buildChips('symChips',SYMS,selS);
+  buildChips('kCondChips',KIDS_CONDS,selKC);
+  buildChips('kSymChips',KIDS_SYMS,selKS);
+  buildRegionGrid();
+  buildDots(4);
+  updateProg(1,'Your profile');
+  // Show auto-detected season
+  const sd=document.getElementById('seasonDetected');
+  if(sd){
+    const s=getCurrentSeason();
+    const now=new Date();
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var monthName=months[now.getMonth()];
+    const labels={summer:'Summer',spring:'Spring / Fall',winter:'Winter'};
+    sd.textContent=`${labels[s]} (${monthName} ${now.getFullYear()})`;
+  }
+}
+
+function buildAgeGrid(cid,groups,sel){
+  document.getElementById(cid).innerHTML=groups.map(g=>`
+    <button class="age-btn ${g.id===sel?'sel':''}" id="ag-${g.id}" onclick="pickAge('${cid}','${g.id}')">
+      <span class="age-icon">${g.icon}</span>
+      <span class="age-name">${g.name}</span>
+      <span class="age-range">${g.range}</span>
+    </button>`).join('');
+}
+function pickAge(cid,id){
+  document.querySelectorAll(`#${cid} .age-btn`).forEach(b=>b.classList.remove('sel'));
+  document.getElementById('ag-'+id).classList.add('sel');
+  if(cid==='ageGrid') selAge=id; else selKAge=id;
+}
+function buildChips(cid,items,set){
+  const prefix=cid.startsWith('k')?'k-':'a-';
+  document.getElementById(cid).innerHTML=items.map(i=>`
+    <button class="chip ${set.has(i.id)?'sel':''}" id="chip-${prefix}${i.id}" onclick="togChip('${i.id}','${cid}')">${i.label}</button>`).join('');
+}
+function togChip(id,cid){
+  var isK=cid.startsWith('k'), isCond=cid.includes('Cond');
+  var set=isK?(isCond?selKC:selKS):(isCond?selC:selS);
+  var prefix=isK?'k-':'a-';
+  if(set.has(id)) set.delete(id); else set.add(id);
+  var chip=document.getElementById('chip-'+prefix+id);
+  if(chip){
+    if(set.has(id)) chip.classList.add('sel');
+    else chip.classList.remove('sel');
+  }
+}
+function buildDots(n){
+  document.getElementById('stepDots').innerHTML=Array.from({length:n},(_,i)=>`<div class="sdot ${i===0?'active':''}" id="dot-${i+1}"></div>`).join('');
+}
+function updateProg(step,name){
+  document.getElementById('stepLbl').textContent=`Step ${step} of 4`;
+  document.getElementById('stepNm').textContent=name;
+  document.getElementById('progFill').style.width=`${(step/4)*100}%`;
+  for(let i=1;i<=4;i++){
+    const d=document.getElementById('dot-'+i);
+    if(d) d.className='sdot '+(i<step?'done':i===step?'active':'');
+  }
+}
+
+const STEP_NM={
+  adult:['Your profile','Morning light','Daytime & evening','Unlock results'],
+  kids:['Child profile','Morning & school','After school & bedtime','Unlock results'],
+};
+
+// ── NAV ────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  var modeA=document.getElementById('modeA');
+  var modeK=document.getElementById('modeK');
+  if(m==='adult'){modeA.classList.add('active');modeK.classList.remove('active');}
+  else{modeK.classList.add('active');modeA.classList.remove('active');}
+  document.getElementById('aFlow').style.display=m==='adult'?'block':'none';
+  document.getElementById('kFlow').style.display=m==='kids'?'block':'none';
+  document.getElementById('results-panel').style.display='none';
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('modeSW').style.display='flex';
+  goStep(m,1);
+}
+function goStep(fm,n){
+  const p=fm==='adult'?'a-s':'k-s';
+  for(let i=1;i<=4;i++){const c=document.getElementById(p+i);if(c)c.classList.remove('active')}
+  const t=document.getElementById(p+n);if(t)t.classList.add('active');
+  updateProg(n,STEP_NM[fm][n-1]);
+  const prog=document.getElementById('progWrap');
+  if(prog){
+    const y=prog.getBoundingClientRect().top+window.scrollY-12;
+    window.scrollTo({top:y,behavior:'smooth'});
+  }
+}
+
+// ── SCORING ────────────────────────────────────────
+// UV availability based on region + auto-detected season
+function getUVMult(){
+  const reg=getRegionData();
+  const s=getCurrentSeason();
+  const lat=Math.abs(reg.lat);
+  if(lat<=20) return 1.0;                                          // tropics — year-round
+  if(lat<=35) return s==='winter'?0.8:1.0;                        // southern USA / S.Europe / Australia
+  if(lat<=45) return s==='summer'?0.95:s==='spring'?0.75:0.45;   // mid USA / E.Canada / S.Europe
+  return s==='summer'?0.85:s==='spring'?0.6:0.25;                 // northern / UK / N.Europe
+}
+function getSeasonLabel(){
+  const s=getCurrentSeason();
+  return s==='summer'?'summer':s==='spring'?'spring/fall':'winter';
+}
+function getAG(){return AGE_GROUPS.find(a=>a.id===selAge)||AGE_GROUPS[2]}
+function getKAG(){return KIDS_AGES.find(a=>a.id===selKAge)||KIDS_AGES[1]}
+
+function scoreAdult(){
+  const ag=getAG(), am=ag.mult;
+  const lm=getUVMult();
+  let s=50;
+  if(gb('sawSunrise'))s+=15;else s-=10;
+  const wd=gv('wakeDelay');if(wd<30)s+=6;else if(wd>60)s-=8*Math.min(1.4,am);
+  const se=gv('sunriseExp');if(se>15)s+=6;else if(se===0)s-=5;
+  if(gb('grounding'))s+=5; if(gb('sunglasses'))s-=7; if(gb('morningScreen'))s-=6;
+  const nat=(gv('dayLight')+se/60)*lm, tgt=ag.sunTgt/60;
+  if(nat>=tgt)s+=10;else s-=(tgt-nat)*6*am;
+  if(gb('bareSkin'))s+=5;
+  s-=gv('artHours')*2*Math.min(1.3,am); if(gb('screens'))s-=7;
+  // EV EMF penalty: each hour in an EV multiplies non-native EMF load
+  if(gb('drivesEV')) s-=Math.min(12, gv('commuteHours')*3.5*Math.min(1.2,am));
+  s-=gv('eveLED')*3.5*Math.min(1.4,am); s-=gv('tvTime')*5*Math.min(1.4,am);
+  const dt=gv('darkTime');if(dt>20)s+=5;if(dt>40)s+=3;
+  if(gb('sawSunset'))s+=5; if(gb('redLight'))s+=8; if(gb('darkRoom'))s+=6;
+  if(lm<=0.45) s-=8; // low UV season penalty
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
+function scoreKids(){
+  const kad=getKAG(); let s=55;
+  if(gb('k_sawMorningSun'))s+=12;
+  const mo=gv('k_morningOut');if(mo>10)s+=8;else s-=6;
+  if(gb('k_preSchoolScreen'))s-=10;
+  s-=gv('k_classHours')*2; if(gb('k_classWindows'))s+=4;
+  s+=Math.min(12,(gv('k_recessTime')/60)*18);
+  s-=gv('k_schoolScreen')*5; if(gb('k_lunchOut'))s+=8;
+  const ao=gv('k_afterOut');if(ao>30)s+=10;else s-=6;
+  s-=gv('k_afterScreen')*5; if(gb('k_sports'))s+=8;
+  s-=gv('k_eveScreen')*8;
+  const dt=gv('k_darkTime');if(dt>20)s+=5;
+  if(gb('k_nightLight')&&!gb('k_redNight'))s-=10;
+  if(gb('k_blackout'))s+=8; if(gb('k_redNight'))s+=5;
+  const tot=mo+(gb('k_lunchOut')?30:0)+gv('k_recessTime')+ao+(gb('k_sports')?60:0);
+  if(tot>=kad.sunTgt)s+=10;
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
+function risksAdult(){
+  const ag=getAG(), am=ag.mult, lm=getUVMult();
+  const nm=gv('sunriseExp')+gv('dayLight')*60;
+  const eb=(gv('eveLED')+gv('tvTime'))*(gb('redLight')?0.15:1);
+  const at=gv('artHours')+gv('eveLED')+gv('tvTime');
+  const evLoad=gb('drivesEV')?Math.min(100,Math.round(gv('commuteHours')*22*Math.min(1.2,am))):0;
+  return{
+    melatonin:Math.min(100,Math.round((eb*14+(!gb('darkRoom')?8:0)+(gv('darkTime')<10?12:0))*Math.min(1.5,am))),
+    vitD:Math.min(100,Math.round(Math.max(0,(ag.sunTgt-nm)/ag.sunTgt*85)*(2-lm))),
+    cortisol:Math.min(100,Math.round((at*5+(!gb('sawSunrise')?20:0)+gv('tvTime')*5)*Math.min(1.3,am))),
+    dopamine:Math.min(100,Math.round((!gb('sawSunrise')?35:0)+gv('artHours')*3+(gv('dayLight')<1?20:0)+(gb('morningScreen')?10:0))),
+    mitochon:Math.min(100,Math.round((at*4+(nm<60?25:0)+(!gb('sawSunrise')?15:0)+(gb('drivesEV')?gv('commuteHours')*6:0))*Math.min(1.3,am))),
+    pomc:Math.min(100,Math.round((!gb('bareSkin')?40:0)+(nm<30?30:0)+(!gb('sawSunrise')?15:0))),
+    evEMF:evLoad,
+  };
+}
+function risksKids(){
+  const kad=getKAG();
+  const tot=gv('k_morningOut')+(gb('k_lunchOut')?30:0)+gv('k_recessTime')+gv('k_afterOut')+(gb('k_sports')?60:0);
+  const ts=gv('k_schoolScreen')+gv('k_afterScreen')+gv('k_eveScreen')+(gb('k_preSchoolScreen')?1:0);
+  const eb=gv('k_eveScreen')*(gb('k_redNight')?0.3:1);
+  return{
+    myopia:Math.min(100,Math.round(Math.max(0,(kad.sunTgt-tot)/kad.sunTgt*90)+ts*3)),
+    melatonin:Math.min(100,Math.round(eb*18+(gb('k_nightLight')&&!gb('k_redNight')?22:0)+(gv('k_darkTime')<10?15:0))),
+    dopamine:Math.min(100,Math.round((!gb('k_sawMorningSun')?40:0)+gv('k_schoolScreen')*5+(gb('k_preSchoolScreen')?15:0))),
+    vitD:Math.min(100,Math.round(Math.max(0,(kad.sunTgt-tot)/kad.sunTgt*80))),
+    neuroDev:Math.min(100,Math.round(ts*4+(tot<60?30:0)+(!gb('k_sawMorningSun')?20:0))),
+  };
+}
+
+// ── SUBMIT ────────────────────────────────────────
+function submitAndShow(){
+  const name=document.getElementById('userName').value.trim();
+  const email=document.getElementById('userEmail').value.trim();
+  if(!name||!email||!email.includes('@')){alert('Please enter your name and a valid email.');return;}
+  document.getElementById('emailOK').style.display='block';
+  showResults(name,'adult');
+}
+function kSubmitAndShow(){
+  const name=document.getElementById('k_userName').value.trim();
+  const email=document.getElementById('k_userEmail').value.trim();
+  if(!name||!email||!email.includes('@')){alert('Please enter your name and a valid email.');return;}
+  document.getElementById('k_emailOK').style.display='block';
+  showResults(name,'kids');
+}
+function showResults(name,fm){
+  document.getElementById('aFlow').style.display='none';
+  document.getElementById('kFlow').style.display='none';
+  document.getElementById('progWrap').style.display='none';
+  document.getElementById('modeSW').style.display='none';
+  document.getElementById('results-panel').style.display='block';
+  if(fm==='adult') renderAdult(name.split(' ')[0]);
+  else renderKids(name.split(' ')[0]);
+  const rp=document.getElementById('results-panel');
+  if(rp){
+    const y=rp.getBoundingClientRect().top+window.scrollY-12;
+    window.scrollTo({top:y,behavior:'smooth'});
+  }
+}
+
+// ── RENDER HELPERS ────────────────────────────────────────
+function setScore(score){
+  const arc=document.getElementById('r_arc');
+  arc.style.strokeDashoffset=346-(score/100)*346;
+  const c=score>=70?'#8CC63E':score>=45?'#F89C1B':'#BE1E2D';
+  arc.style.stroke=c;
+  document.getElementById('r_num').textContent=score;
+  document.getElementById('r_num').style.color=c;
+  const g=score>=85?'Optimal':score>=70?'Good':score>=55?'Fair':score>=40?'Poor':'Critical';
+  document.getElementById('r_grade').textContent=g;
+  document.getElementById('r_grade').style.color=c;
+  const tl={Optimal:'Closely aligned with your circadian biology.',Good:'Solid habits. A few targeted changes make a big difference.',Fair:'Significant gaps exist between your pattern and what your body needs.',Poor:'Your light environment is actively working against your health every day.',Critical:'Severe circadian disruption. Your body is fighting your environment daily.'};
+  document.getElementById('r_tag').textContent=tl[g];
+}
+function rBar(name,pct,color,what,symptoms,note){
+  const lv=pct>=70?'High risk':pct>=40?'Elevated':'Low risk';
+  const lc=pct>=70?'#BE1E2D':pct>=40?'#F89C1B':'#8CC63E';
+  const lb=pct>=70?'#FDF0F1':pct>=40?'#FFF8E6':'#F4FAE9';
+  const sympHtml=symptoms.map(s=>`<span style="display:inline-block;background:rgba(0,0,0,.05);border-radius:10px;padding:3px 10px;font-size:11px;margin:2px 2px 0 0;font-weight:400;color:var(--black)">${s}</span>`).join('');
+  return`<div class="risk-item">
+    <div class="risk-hd">
+      <span class="risk-name">${name}</span>
+      <span class="risk-badge" style="background:${lb};color:${lc}">${lv}</span>
+    </div>
+    <div class="risk-track"><div class="risk-fill ${pct>=50?'pulsing':''}" style="width:${pct}%;background:${color}"></div></div>
+    <div class="risk-what">${what}</div>
+    <div class="risk-syms-label">You may experience:</div>
+    <div class="risk-syms">${sympHtml}</div>
+    ${note?`<div class="risk-note" style="margin-top:8px">${note}</div>`:''}
+  </div>`;
+}
+function fi(type,text){
+  const bg=type==='d'?'#FDF0F1':type==='w'?'#FFF8E6':'#F4FAE9';
+  const dc=type==='d'?'#BE1E2D':type==='w'?'#F89C1B':'#8CC63E';
+  const sym=type==='d'?'!':type==='w'?'?':'✓';
+  return`<div class="finding" style="background:${bg}"><div class="fdot" style="background:${dc};color:white">${sym}</div><div class="ftext">${text}</div></div>`;
+}
+function ai(num,title,body){
+  return`<div class="action-item"><div class="action-num">${num}</div><div><div class="action-title">${title}</div><div class="action-body">${body}</div></div></div>`;
+}
+function tl(segs,total,labels,legItems){
+  document.getElementById('r_tl').innerHTML=segs.map(s=>`<div class="tl-seg" style="width:${Math.max(0.3,(s.w/total)*100)}%;background:${s.c}">${s.w>50&&s.l?s.l:''}</div>`).join('');
+  document.getElementById('r_tlLbls').innerHTML=labels.map(l=>`<span>${l}</span>`).join('');
+  document.getElementById('r_leg').innerHTML=legItems.map(x=>`<div class="leg-item"><div class="leg-dot" style="background:${x.c}"></div>${x.l}</div>`).join('');
+}
+
+// ── ADULT RESULTS ────────────────────────────────────────
+function renderAdult(name){
+  const ag=getAG(), score=scoreAdult(), r=risksAdult();
+  document.getElementById('r_greet').textContent=`${name}'s Report — ${ag.name} (${ag.range})`;
+  setScore(score);
+
+  const segs=[];
+  segs.push({w:60,c:'#1A1A2E',l:''});
+  if(gb('sawSunrise')){segs.push({w:30,c:'#F89C1B',l:'Sunrise'});segs.push({w:Math.max(0,gv('wakeDelay')-30),c:'#1A1A2E',l:''});}
+  else segs.push({w:gv('wakeDelay'),c:'#1A1A2E',l:''});
+  if(gv('sunriseExp')>0)segs.push({w:gv('sunriseExp'),c:'#F89C1B',l:'Sun'});
+  segs.push({w:30,c:'#1B75BC',l:'Car'});
+  segs.push({w:gv('artHours')*60,c:gb('screens')?'#BE1E2D':'#1B75BC',l:'Work'});
+  if(gv('dayLight')>0)segs.push({w:gv('dayLight')*60,c:'#8CC63E',l:'Outside'});
+  if(gv('eveLED')>0)segs.push({w:gv('eveLED')*60,c:'#7B3E8C',l:'Home'});
+  if(gv('tvTime')>0)segs.push({w:gv('tvTime')*60,c:'#BE1E2D',l:'Screens'});
+  segs.push({w:Math.max(8,gv('darkTime')),c:'#1A1A2E',l:''});
+  tl(segs,1140,['5am','8am','12pm','6pm','9pm','12am'],[
+    {c:'#F89C1B',l:'Natural'},{c:'#1B75BC',l:'Artificial'},{c:'#BE1E2D',l:'Screen'},{c:'#7B3E8C',l:'Eve LED'},{c:'#1A1A2E',l:'Dark'}
+  ]);
+
+  const nm=gv('sunriseExp')+gv('dayLight')*60;
+  const reg=getRegionData(), lm=getUVMult(), sl=getSeasonLabel();
+  const isLowUV=lm<=0.45;
+  document.getElementById('r_risks').innerHTML=
+    rBar('Melatonin suppression',r.melatonin,'#7B3E8C',
+      'Melatonin is your body\'s most powerful cellular antioxidant — produced in every mitochondria, not just the pineal gland. It governs sleep onset, cell repair, immune activity, and tumour suppression. It is destroyed by blue light after dark.',
+      ['Trouble falling asleep','Waking between 2–4am','Feeling unrefreshed in the morning','Anxiety at night','Poor immune resilience','Increased inflammation'],
+      isLowUV?null:'Evening LED and screen light are the primary suppressors — even dim overhead lighting after sunset is enough.'
+    )+
+    rBar('Cortisol dysregulation',r.cortisol,'#BE1E2D',
+      'Cortisol is your master stress and energy hormone. It should spike sharply at sunrise, power your morning, then fall steadily through the day. Artificial light flattens and delays this curve — so you\'re running on a broken rhythm.',
+      ['Fatigue in the morning despite sleep','Wired but tired feeling at night','Belly fat / weight that won\'t shift','Anxiety and racing thoughts','Craving sugar or caffeine','Slow recovery from stress'],
+      null
+    )+
+    rBar('Vitamin D3 deficiency',r.vitD,'#F89C1B',
+      'Vitamin D3 is not a vitamin — it\'s a hormone produced in your skin from UV-B sunlight. It regulates over 200 genes, governs immune tolerance, bone density, mood, thyroid function, and cancer protection. It cannot be adequately replaced by supplements alone.',
+      ['Low mood or seasonal depression','Frequent illness or slow recovery','Achy joints or bones','Muscle weakness or cramps','Brain fog','Hair thinning'],
+      isLowUV?`In ${reg.name} right now (${sl}), UV-B is essentially absent — outdoor time alone cannot produce Vitamin D3.`:null
+    )+
+    rBar('Dopamine timing',r.dopamine,'#1B75BC',
+      'Dopamine is your motivation, focus, and reward hormone. UV-A light hitting your retina at sunrise triggers the dopamine and serotonin cascade for the day. Without this morning signal, your brain\'s reward system runs flat — making everything feel harder than it should.',
+      ['Poor focus and concentration','Low motivation — hard to start tasks','Mood that dips by mid-morning','Reliance on caffeine, sugar, or screens for energy','Procrastination','Feeling detached or numb'],
+      null
+    )+
+    rBar('Mitochondrial stress',r.mitochon,'#000000',
+      'Your mitochondria are your cellular power stations. IR-A infrared light from morning sun charges a protein called cytochrome c oxidase — the final step of ATP production. Without this signal, your mitochondria produce less energy and more cellular waste.',
+      ['Low energy even after sleep','Exercise intolerance or slow recovery','Brain fog and poor memory','Sensitivity to cold','Slow healing','Feeling older than your age'],
+      null
+    )+
+    rBar('POMC gene activation',r.pomc,'#8CC63E',
+      'POMC is a master gene activated by UV light on bare skin. It produces melanin (skin protection), MSH (controls appetite and metabolism), beta-endorphin (natural mood elevation), and ACTH (adrenal regulation). No supplement, food, or indoor light can replicate this signal.',
+      ['Uncontrollable appetite or cravings','Difficulty losing weight','Low mood or flat emotions','Poor stress resilience','Immune dysregulation','Pale or reactive skin'],
+      null
+    )+
+    (gb('drivesEV')?rBar('EV electromagnetic field (EMF) load',r.evEMF,'#BE1E2D',
+      `Electric vehicles generate strong ELF (extremely low-frequency) magnetic fields from the motor, inverter, high-voltage cables, and battery during every trip. Unlike WiFi or phone EMF which are radiofrequency, EV EMF is a magnetic field — it passes straight through the metal body of the car and directly into your tissues. In Kruse's framework, non-native EMFs knock electrons from cell membranes and interfere with the same DHA-based photoreceptor system that sunlight depends on — meaning your sunlight requirement increases the more EV time you accumulate.`,
+      ['Fatigue that doesn\'t match your sleep quality','Brain fog after long commutes','Increased sensitivity to other EMF sources','Slower recovery from illness or exercise','Heightened stress response','Worsening of any existing hormonal or mitochondrial issues'],
+      `You spend approx. ${gv('commuteHours')} hrs/day in an EV. Kruse's principle: non-native EMF multiplies your sunlight requirement — the more EV exposure, the more outdoor sun time you need to compensate.`
+    ):'');
+
+  const f=[];
+  if(!gb('sawSunrise'))f.push(fi('d','You are not watching the sunrise. This is the single highest-value change you can make. The first photons of the day anchor every hormone cascade for the next 24 hours.'));
+  if(gb('morningScreen'))f.push(fi('d','Screens before sunlight replace the natural UV-A dopamine trigger with a stimulant that depletes rather than builds your morning neurochemistry.'));
+  if(gb('sunglasses'))f.push(fi('w','Morning sunglasses block UV-A and IR-A — the photons your retina needs to trigger melanopsin and begin the circadian cascade.'));
+  if(!gb('grounding'))f.push(fi('w','Going barefoot during morning sun amplifies the photonic signal. The Earth\'s electrons and your bioelectric field interact — this is documented physiology.'));
+  if(gv('artHours')>=8)f.push(fi('d',`${gv('artHours')} hours of artificial light tells your body it is perpetual noon. Your cells never receive the "wind down" signal that only falling light levels can provide.`));
+  if(!gb('bareSkin'))f.push(fi('w','Your skin is a neuroendocrine organ. Covered skin misses POMC activation, nitric oxide release, and UV-driven hormonal signals.'));
+  if(gv('tvTime')>=2)f.push(fi('d',`${gv('tvTime')} hours of screens before bed is suppressing melatonin. This isn't just about sleep — it's your most powerful cellular antioxidant, active in every mitochondria.`));
+  if(!gb('darkRoom'))f.push(fi('w','Any light during sleep — even a standby LED — continues to suppress mitochondrial melatonin production all night.'));
+  if(isLowUV)f.push(fi('w',`In ${reg.name} right now (${sl}), UV-B is essentially absent regardless of outdoor time. Specific compensatory strategies exist — worth exploring in a consultation.`));
+  if(gb('drivesEV'))f.push(fi('w',`You drive an EV. In Kruse's framework this is a significant daily non-native EMF load — the magnetic fields from the motor and battery pass through the car body directly into your tissues. This increases your minimum sunlight requirement and compounds the effect of any other light deficiencies in your day.`));
+  if(gb('sawSunrise'))f.push(fi('o','You are watching the sunrise. This anchors your SCN, initiates the cortisol awakening response, and begins DHA recycling in your retina.'));
+  if(gb('redLight'))f.push(fi('o','Red and amber evening light stimulates cytochrome c oxidase in mitochondria without suppressing melatonin. Excellent.'));
+  if(gb('darkRoom'))f.push(fi('o','A fully dark bedroom allows maximum mitochondrial melatonin production — protecting every cell through the night.'));
+  document.getElementById('r_findings').innerHTML=f.join('');
+
+  const acts=[];
+  if(!gb('sawSunrise')) acts.push(ai(1,'Watch tomorrow\'s sunrise bare-eyed','Set an alarm 10 minutes before local sunrise. Go outside — not through a window. Even 5 minutes. This is the highest ROI change in the entire framework.'));
+  else if(gv('artHours')>=8) acts.push(ai(1,'Break up your artificial light','A 10-minute outdoor break every 90 minutes resets your ultradian rhythm. Your biology registers this as a meaningful shift in the time of day.'));
+  else acts.push(ai(1,`Extend morning outdoor time to ${ag.sunTgt} min`,'You\'re watching sunrise — now extend it. Your age group needs this daily minimum for full circadian entrainment.'));
+  if(gv('tvTime')>0||gv('eveLED')>2) acts.push(ai(2,'Eliminate blue light after sunset','Replace overhead LEDs with red or amber bulbs. No screens 2 hours before bed. Your melatonin will begin recovering within 3–5 days.'));
+  else if(!gb('darkRoom')) acts.push(ai(2,'Make your bedroom completely dark','Blackout curtains. Cover all standby LEDs. Any light during sleep suppresses your mitochondrial melatonin — your whole-body antioxidant system.'));
+  else acts.push(ai(2,'Add bare-skin time at solar noon','15–20 minutes with arms and face in direct sun around midday activates POMC, produces Vitamin D3, and releases nitric oxide from skin.'));
+  if(!gb('grounding')) acts.push(ai(3,'Go barefoot during your morning sun','Bare feet on grass or soil during sunrise combines photonic and grounding input. This is the complete morning protocol in Kruse\'s framework.'));
+  else if(isLowUV) acts.push(ai(3,`Low UV season in ${reg.name}`,`It's ${sl} — UV-B is very limited right now. There are specific compensatory approaches for your region and season. Worth exploring in a consultation.`));
+  else acts.push(ai(3,'Protect your mitochondrial melatonin','Darkness at night is when every cell runs its antioxidant and repair cycle. Make it non-negotiable.'));
+  document.getElementById('r_actions').innerHTML=acts.join('');
+
+  renderUnlock(false);
+}
+
+// ── KIDS RESULTS ────────────────────────────────────────
+function renderKids(name){
+  const kad=getKAG(), score=scoreKids(), r=risksKids();
+  const tot=gv('k_morningOut')+(gb('k_lunchOut')?30:0)+gv('k_recessTime')+gv('k_afterOut')+(gb('k_sports')?60:0);
+  document.getElementById('r_greet').textContent=`${name}'s Child Report — ${kad.name} (${kad.range})`;
+  setScore(score);
+
+  const segs=[];
+  segs.push({w:60,c:'#1A1A2E',l:''});
+  if(gv('k_morningOut')>0)segs.push({w:gv('k_morningOut'),c:'#F89C1B',l:'Outside'});
+  if(gb('k_preSchoolScreen'))segs.push({w:30,c:'#BE1E2D',l:'Screens'});
+  segs.push({w:15,c:'#1B75BC',l:'Bus'});
+  segs.push({w:gv('k_classHours')*60,c:'#1B75BC',l:'School'});
+  if(gv('k_recessTime')>0)segs.push({w:gv('k_recessTime'),c:'#8CC63E',l:'Recess'});
+  if(gb('k_lunchOut'))segs.push({w:25,c:'#8CC63E',l:'Lunch'});
+  if(gv('k_afterOut')>0)segs.push({w:gv('k_afterOut'),c:'#F89C1B',l:'Play'});
+  if(gb('k_sports'))segs.push({w:60,c:'#F89C1B',l:'Sport'});
+  if(gv('k_afterScreen')>0)segs.push({w:gv('k_afterScreen')*60,c:'#BE1E2D',l:'Screens'});
+  if(gv('k_eveScreen')>0)segs.push({w:gv('k_eveScreen')*60,c:'#7B3E8C',l:'Eve'});
+  segs.push({w:Math.max(8,gv('k_darkTime')),c:'#1A1A2E',l:''});
+  tl(segs,960,['6am','8am','12pm','3pm','7pm','10pm'],[
+    {c:'#F89C1B',l:'Natural'},{c:'#1B75BC',l:'Classroom'},{c:'#BE1E2D',l:'Screen'},{c:'#7B3E8C',l:'Eve LED'},{c:'#1A1A2E',l:'Dark'}
+  ]);
+
+  document.getElementById('r_risks').innerHTML=
+    rBar('Myopia risk',r.myopia,'#1B75BC',
+      `Outdoor light at 10,000+ lux triggers dopamine release in the retina, which actively slows eye elongation — the physical cause of nearsightedness. Indoor classroom light (300–500 lux) is simply too dim to trigger this. Your child gets ${tot} min of outdoor light vs the ${kad.sunTgt} min needed daily.`,
+      ['Squinting to see the board or TV','Holding screens or books very close','Headaches after school or screen time','Rubbing eyes frequently','Declining grades due to difficulty seeing','Requesting to sit at the front of the class'],
+      null
+    )+
+    rBar('Melatonin suppression',r.melatonin,'#7B3E8C',
+      'Children produce melatonin more vigorously than adults — but it is also suppressed faster and more completely by blue light. Melatonin triggers the first deep sleep cycle, which is when growth hormone is released and the brain consolidates the day\'s learning.',
+      ['Difficulty falling asleep at bedtime','Waking in the night or early morning','Overtired but "wired" at bedtime','Irritability the next day','Slow growth or physical development','Reduced learning retention'],
+      null
+    )+
+    rBar('Dopamine & attention',r.dopamine,'#F89C1B',
+      'Dopamine is the brain\'s focus and motivation molecule. UV-A light hitting the retina at sunrise triggers a dopamine surge that sets the attentional tone for the entire day. Without this morning signal, the brain reaches for stimulation from screens, food, or movement — which is often labelled as hyperactivity or inattention.',
+      ['Difficulty sitting still or focusing','Impulsive behaviour','Low motivation for schoolwork','Mood crash in the afternoon','Heavy reliance on screens for stimulation','Emotional dysregulation or meltdowns'],
+      null
+    )+
+    rBar('Vitamin D3 deficiency',r.vitD,'#BE1E2D',
+      'Children cannot produce Vitamin D3 indoors. UV-B sunlight on bare skin converts cholesterol into D3 — the active hormone that governs bone mineralisation, immune tolerance, calcium absorption, and mood regulation. A deficient child during the growth years faces compounding long-term effects.',
+      ['Frequent colds and infections','Growing pains or achy legs','Low energy or chronic fatigue','Poor mood and irritability','Dental problems (Vitamin D governs calcium)','Slow healing from illness or injury'],
+      null
+    )+
+    rBar('Neurodevelopmental risk',r.neuroDev,'#000000',
+      'The developing brain requires UV-triggered serotonin for neural wiring, myelination, and emotional regulation circuits. Screen-heavy, sun-deficient childhood environments during these critical developmental windows compress the serotonin baseline that will shape mood and cognition into adulthood.',
+      ['Delayed emotional regulation','Anxiety or social withdrawal','Learning difficulties','Poor language or reading development','Low frustration tolerance','Difficulty forming peer relationships'],
+      null
+    );
+
+  const f=[];
+  if(tot<60)f.push(fi('d',`Only ${tot} min of outdoor light today — your child needs ${kad.sunTgt} min. This drives myopia risk, low serotonin, and attention difficulties.`));
+  else if(tot<kad.sunTgt)f.push(fi('w',`${tot} min outdoor — short of the ${kad.sunTgt} min target. Small additions (walk to school, outdoor breakfast) add up quickly.`));
+  else f.push(fi('o',`Your child is meeting the ${kad.sunTgt} min outdoor target — the most important factor for healthy development.`));
+  if(gb('k_preSchoolScreen'))f.push(fi('d','Screens before school replace the UV-A morning dopamine signal with a depleting stimulant. This sets the neurochemical tone for the entire school day.'));
+  if(gb('k_nightLight')&&!gb('k_redNight'))f.push(fi('d','A white LED night light suppresses melatonin all night — compressing the growth hormone window and reducing brain repair during sleep.'));
+  if(gv('k_recessTime')<20)f.push(fi('w',`Only ${gv('k_recessTime')} min of outdoor recess. Research shows 30+ min outdoor recess is the most effective school-based intervention for attention and myopia prevention.`));
+  if(gv('k_eveScreen')>=2)f.push(fi('d',`${gv('k_eveScreen')} hours of evening screens. One hour of screens before bed can delay melatonin onset by 60–90 minutes in children — compressing deep sleep and growth hormone output.`));
+  if(gb('k_blackout'))f.push(fi('o','A dark bedroom maximises melatonin amplitude — essential for growth hormone and neural consolidation.'));
+  if(gb('k_lunchOut'))f.push(fi('o','Outdoor lunch provides UV-B at peak solar angle — the best timing for Vitamin D synthesis.'));
+  if(gb('k_sports'))f.push(fi('o','Outdoor sport adds 60+ min of full-spectrum natural light, retinal dopamine, and UV exposure.'));
+  document.getElementById('r_findings').innerHTML=f.join('');
+
+  const acts=[];
+  if(tot<kad.sunTgt) acts.push(ai(1,'Build outdoor time into the routine',`Target ${kad.sunTgt} min daily: walk to school, outdoor breakfast, sport after school. This is the most protective thing for your child's eyes, brain and mood.`));
+  else acts.push(ai(1,'Protect and extend the outdoor habit','Make morning outdoor light (before screens) the first event of every day.'));
+  if(gv('k_eveScreen')>0||(gb('k_nightLight')&&!gb('k_redNight'))) acts.push(ai(2,'Create a sunset protocol','No screens 90 minutes before bed. Dim all lights. Replace any white LED night light with a red or amber one. Children\'s melatonin responds within 3–5 days.'));
+  else acts.push(ai(2,'Advocate for more outdoor recess','Talk to the school — cite myopia and attention research. Even 10 extra minutes of outdoor recess per day has measurable cumulative effects.'));
+  acts.push(ai(3,'Remove screens before school','Replace morning screen time with 10 minutes outside. The neurochemical difference for the school day ahead is measurable.'));
+  document.getElementById('r_actions').innerHTML=acts.join('');
+
+  renderUnlock(true);
+}
+
+// ── UNLOCK TEASER ────────────────────────────────────────
+function renderUnlock(isKids){
+  const items=[
+    {icon:'🌍',title:'Your latitude & season',body:'UV-B availability changes everything. Find out what your location means — and what to do when sunlight isn\'t enough.'},
+  ];
+  if(!isKids){
+    items.push({icon:'🦶',title:'Grounding & the Earth\'s magnetic field',body:'Your body is bioelectric. Find out how barefoot contact with the Earth amplifies every light benefit — and why Kruse considers it non-negotiable.'});
+    items.push({icon:'🧬',title:'The POMC gene & your metabolism',body:'UV on bare skin activates a gene regulating appetite, fat metabolism, melanin, and immune tolerance. Find out what you\'re missing.'});
+    items.push({icon:'💧',title:'Deuterium & your mitochondria',body:'Sunlight helps deplete deuterium — heavy hydrogen that slows your mitochondria and accelerates aging. Find out what this means for your energy.'});
+    items.push({icon:'❄️',title:'Cold thermogenesis as a compensator',body:'In winter or low-sun conditions, cold exposure has specific mitochondrial effects that partially compensate. Find out if this applies to you.'});
+    items.push({icon:'🍣',title:'DHA, food & your light environment',body:'DHA works synergistically with sunlight to power retinal and mitochondrial function. The food-light connection goes deeper than nutrition.'});
+  }
+  items.push({icon:'📡',title:'Non-native EMF — the multiplier effect',body:'WiFi, cell towers, and device proximity multiply your artificial light burden and increase your sunlight requirement. This layer changes everything.'});
+  const n=isKids?selKC.size+selKS.size:selC.size+selS.size;
+  if(n>0) items.push({icon:'🩺',title:'Your specific conditions & light',body:`You flagged ${n} conditions or symptoms. Each has a specific relationship to light biology. A conversation with Emmanuela can map your exact situation.`});
+  document.getElementById('r_unlock').innerHTML=items.map(it=>`
+    <div class="unlock-item">
+      <div class="unlock-dot">${it.icon}</div>
+      <div><strong>${it.title}</strong> — ${it.body}</div>
+    </div>`).join('');
+}
+
+function startOver(){
+  document.getElementById('results-panel').style.display='none';
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('modeSW').style.display='flex';
+  setMode('adult');
+}
+
+init();
+</script>
+</body>
+</html>
