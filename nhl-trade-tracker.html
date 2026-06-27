@@ -131,6 +131,13 @@ header {
   color: #000; font-weight: 700;
 }
 .divider { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
+.team-select {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  border-radius: 20px; padding: 6px 12px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; max-width: 190px; outline: none;
+}
+.team-select:hover { border-color: var(--accent); }
+.team-select:focus { border-color: var(--accent); }
 
 /* ── SECTION HEADER ── */
 .section-header {
@@ -186,21 +193,27 @@ header {
 .source-link:hover { background: rgba(0,180,216,.1); }
 
 .trade-desc {
-  padding: 10px 18px 14px;
-  font-size: .93rem; line-height: 1.55; color: var(--text);
+  padding: 10px 16px 12px;
+  font-size: .88rem; line-height: 1.5; color: var(--text);
+}
+/* collapsed cards clamp the blurb to two lines */
+.trade-desc.clamp {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* ── ASSETS (every player + pick involved) ── */
-.trade-assets {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 0 18px 14px;
-}
+/* ── ASSET CHIPS (players + picks, shown under each team) ── */
 .asset-chip {
-  font-size: .72rem; font-weight: 600; white-space: nowrap;
-  border-radius: 12px; padding: 4px 10px; border: 1px solid var(--border2);
+  font-size: .7rem; font-weight: 600; white-space: nowrap;
+  border-radius: 10px; padding: 3px 9px; border: 1px solid var(--border2);
 }
 .asset-chip.player { background: var(--surface3); color: var(--text); }
 .asset-chip.pick   { background: var(--gold-dim); color: var(--gold); border-color: rgba(245,158,11,.3); }
+.ts-assets {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin-top: 2px; max-width: 100%;
+}
+.ts-assets .asset-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── SPLIT TWO-SIDED TEAM PANEL ── */
 .trade-teams {
@@ -212,17 +225,17 @@ header {
 }
 
 .team-side {
-  position: relative; min-height: 184px;
+  position: relative; min-height: 168px;
   display: flex; flex-direction: column; justify-content: flex-end;
   overflow: hidden; text-align: center;
 }
-/* logo fills the entire half, edge-to-edge */
+/* logo fills the entire half, edge-to-edge, as the card background */
 .ts-logo-bg {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;            /* fill the half completely */
-  padding: 14px;                /* small breathing room from edges */
-  opacity: .92;
+  padding: 12px;
+  opacity: .95;
 }
 .ts-logo-fallback {
   display: flex; align-items: center; justify-content: center;
@@ -477,13 +490,17 @@ header {
     </div>
   </div>
 
-  <!-- Controls: sort + filter in one bar -->
+  <!-- Controls: sort + team filter + period -->
   <div class="controls-bar">
     <span class="controls-label">Sort:</span>
     <div class="pill-group">
-      <button class="pill active" id="sort-time" onclick="setSort('time')">↓ Newest</button>
-      <button class="pill"        id="sort-team" onclick="setSort('team')">Team A→Z</button>
+      <button class="pill active" id="sort-time" onclick="toggleTimeSort()">↓ Newest</button>
     </div>
+    <div class="divider"></div>
+    <span class="controls-label">Team:</span>
+    <select id="team-filter" class="team-select" onchange="setTeamFilter(this.value)">
+      <option value="">All teams</option>
+    </select>
     <div class="divider"></div>
     <span class="controls-label">Show:</span>
     <div class="pill-group">
@@ -737,14 +754,16 @@ const ESPN_BASE  = 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl';
 const CORS_PROXY = 'https://corsproxy.io/?url=';
 
 let currentDays  = 1;
-let sortKey      = 'time';   // 'time' | 'team'
-let sortAsc      = false;    // time: false = newest first; team: false = A→Z
+let sortAsc      = false;    // false = newest first
+let teamFilter   = '';       // '' = all teams, else an abbrev
 let allTrades    = [];
 let pollTimer    = null;
 let isPolling    = false;
 let dataSource   = '—';
 
 const seenIds = new Set(JSON.parse(localStorage.getItem('nhltt_seen') || '[]'));
+// When each trade was first seen (epoch ms) — approximates "posted" time.
+const seenTimes = JSON.parse(localStorage.getItem('nhltt_seen_times') || '{}');
 
 // ══════════════════════════════════════════════
 //  DATE HELPERS
@@ -852,6 +871,33 @@ function extractAssets(desc) {
   return assets;
 }
 
+// Split assets by who receives them: the acquirer (before "from"/"in exchange")
+// vs the other team (after "in exchange for"/"for"). Maps players under each team.
+function splitAssets(desc) {
+  if (!desc) return { acquirerGets: [], otherGets: [] };
+  const lower = desc.toLowerCase();
+  let idx = lower.indexOf('in exchange for');
+  let afterLen = 'in exchange for'.length;
+  if (idx < 0) { idx = lower.indexOf(' in return for '); afterLen = ' in return for '.length; }
+  if (idx < 0) { idx = lower.indexOf(' for ');           afterLen = ' for '.length; }
+  if (idx < 0) {
+    return { acquirerGets: extractAssets(desc), otherGets: [] };
+  }
+  return {
+    acquirerGets: extractAssets(desc.slice(0, idx)),
+    otherGets:    extractAssets(desc.slice(idx + afterLen)),
+  };
+}
+
+// "Today · 2:14 PM" — day label plus the time we first saw it (≈ posted time).
+function postedLabel(t) {
+  const day   = relativeDate(t.date);
+  const stamp = seenTimes[t.id];
+  if (!stamp) return day;
+  const time = new Date(stamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return `${day} · ${time}`;
+}
+
 function buildRedditLink(trade) {
   const q = trade.playerName
     ? `${trade.playerName} traded`
@@ -925,14 +971,95 @@ function normaliseESPN(tx) {
 }
 
 // ══════════════════════════════════════════════
-//  FETCH TRADES — NHL primary, ESPN fallback
+//  NHL.com TRADES ARTICLE — the authoritative season list
+// ══════════════════════════════════════════════
+const NHL_NEWS_URL = 'https://www.nhl.com/news/2025-26-nhl-trades';
+
+// Stable id from a description so seen/notify state survives reorders.
+function shortKey(s) {
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+function normDescKey(d) { return (d || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 90); }
+
+// Build a trade from a plain description + date (used by the article parser).
+function normaliseText(description, isoDate, source) {
+  if (!looksLikeTrade('', description)) return null;
+  const { fromAbbr, toAbbr } = resolveTeams({ description }, description, '', '');
+  if (!TEAMS[fromAbbr] && !TEAMS[toAbbr]) return null;      // skip noise
+  const players = extractAssets(description).filter(a => a.type === 'player');
+  const trade = {
+    id: `news_${shortKey(description)}`,
+    date: isoDate, description, fromTeam: fromAbbr, toTeam: toAbbr,
+    playerName: players[0]?.label || '', assets: extractAssets(description), source,
+  };
+  trade.redditUrl = buildRedditLink(trade);
+  trade.sourceUrl = NHL_NEWS_URL;                          // link to the real source page
+  return trade;
+}
+
+function monthDayToISO(month, day, year) {
+  const M = { january:0,february:1,march:2,april:3,may:4,june:5,july:6,
+              august:7,september:8,october:9,november:10,december:11 };
+  const mi = M[month.toLowerCase()];
+  if (mi == null) return '';
+  const y = year || (mi >= 6 ? 2025 : 2026);              // 2025-26 season spans two years
+  return toISO(new Date(Date.UTC(y, mi, day)));
+}
+
+function parseNewsHTML(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const out = [];
+  let curISO = toISO(new Date());
+  const monthRe = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?\b/i;
+
+  for (const el of doc.querySelectorAll('h1,h2,h3,h4,h5,h6,strong,b,p,li')) {
+    const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!text || text.length < 4) continue;
+    const dm = monthRe.exec(text);
+    if (dm && text.length < 32) {                          // a date sub-header
+      const iso = monthDayToISO(dm[1], +dm[2], dm[3] ? +dm[3] : null);
+      if (iso) curISO = iso;
+      continue;
+    }
+    if (text.length > 25 && text.length < 700 && looksLikeTrade('', text)) {
+      const t = normaliseText(text, curISO, 'NHL.com');
+      if (t) out.push(t);
+    }
+  }
+  // Dedupe by normalized description.
+  const seen = new Set(), uniq = [];
+  for (const t of out) {
+    const k = normDescKey(t.description);
+    if (!seen.has(k)) { seen.add(k); uniq.push(t); }
+  }
+  return uniq;
+}
+
+async function fetchNHLNews() {
+  const proxy = `${CORS_PROXY}${encodeURIComponent(NHL_NEWS_URL)}`;
+  try {
+    const r = await fetch(proxy, { signal: AbortSignal.timeout(14000) });
+    if (!r.ok) return [];
+    let text = await r.text();
+    try { const j = JSON.parse(text); if (j.contents) text = j.contents; } catch {}
+    return parseNewsHTML(text);
+  } catch { return []; }
+}
+
+// ══════════════════════════════════════════════
+//  FETCH TRADES — NHL.com article → transactions API → ESPN, all merged
 // ══════════════════════════════════════════════
 async function fetchTrades(days) {
-  const trades = [];
-  const seen   = new Set();
-  let   gotAny = false;
+  const all = [], seenKey = new Set();
+  const add = t => { if (!t) return; const k = normDescKey(t.description); if (!seenKey.has(k)) { seenKey.add(k); all.push(t); } };
 
-  // NHL: parallel requests for each day
+  // 1. NHL.com trades article (what the user compares against)
+  let newsTrades = [];
+  try { newsTrades = await fetchNHLNews(); } catch {}
+  newsTrades.forEach(add);
+
+  // 2. NHL transactions API (per-day) — adds anything the article hasn't yet
   const nhlDays = await Promise.all(
     Array.from({ length: days }, (_, i) => fetchNHLDay(toCompact(daysBack(i))))
   );
@@ -940,71 +1067,66 @@ async function fetchTrades(days) {
     if (!data) continue;
     const list = Array.isArray(data.transactions) ? data.transactions
                : Array.isArray(data.data)         ? data.data : [];
-    for (const tx of list) {
-      const t = normaliseNHL(tx);
-      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); gotAny = true; }
-    }
+    for (const tx of list) add(normaliseNHL(tx));
   }
 
-  // ESPN fallback
-  if (!gotAny) {
-    const espnData = await fetchESPN(days);
-    const list = Array.isArray(espnData?.transactions) ? espnData.transactions
-               : Array.isArray(espnData?.items)        ? espnData.items : [];
-    for (const tx of list) {
-      const t = normaliseESPN(tx);
-      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); }
-    }
-    if (list.length > 0) gotAny = true;
+  // 3. ESPN fallback only if we still have nothing
+  if (all.length === 0) {
+    const espn = await fetchESPN(days);
+    const list = Array.isArray(espn?.transactions) ? espn.transactions
+               : Array.isArray(espn?.items)        ? espn.items : [];
+    for (const tx of list) add(normaliseESPN(tx));
   }
 
-  dataSource = trades[0]?.source || '—';
-  return trades;
+  dataSource = newsTrades.length ? 'NHL.com' : (all[0]?.source || '—');
+  return all;
 }
 
 // ══════════════════════════════════════════════
 //  SORT
 // ══════════════════════════════════════════════
+// Sort key for a trade: prefer first-seen time, fall back to its date.
+function tradeStamp(t) {
+  return seenTimes[t.id] || Date.parse((t.date || '').slice(0,10) + 'T12:00:00') || 0;
+}
+
 function applySortFilter(trades) {
   const todayStr = toISO(new Date());
   const cutoff   = currentDays === 1 ? todayStr : toISO(daysBack(currentDays));
   let filtered   = trades.filter(t => t.date.slice(0,10) >= cutoff);
 
-  if (sortKey === 'time') {
-    filtered.sort((a, b) => {
-      const cmp = b.date.localeCompare(a.date);
-      return sortAsc ? -cmp : cmp;
-    });
-  } else {
-    filtered.sort((a, b) => {
-      const an = getTeamName(a.fromTeam).toLowerCase();
-      const bn = getTeamName(b.fromTeam).toLowerCase();
-      const cmp = an.localeCompare(bn);
-      return sortAsc ? cmp : -cmp;
-    });
+  // Team filter — show only trades involving the chosen team (either side).
+  if (teamFilter) {
+    filtered = filtered.filter(t => t.fromTeam === teamFilter || t.toTeam === teamFilter);
   }
+
+  filtered.sort((a, b) => {
+    const cmp = tradeStamp(b) - tradeStamp(a);   // newest first
+    return sortAsc ? -cmp : cmp;
+  });
   return filtered;
 }
 
-function setSort(key) {
-  if (sortKey === key) {
-    sortAsc = !sortAsc;
-  } else {
-    sortKey = key;
-    sortAsc = key === 'team' ? false : false; // default: newest / A→Z
-  }
-  // Update button labels
-  const timeLabel = sortKey === 'time'
-    ? (sortAsc ? '↑ Oldest' : '↓ Newest') : '↕ Time';
-  const teamLabel = sortKey === 'team'
-    ? (sortAsc ? 'Team Z→A' : 'Team A→Z') : 'Team A→Z';
-  document.getElementById('sort-time').textContent = timeLabel;
-  document.getElementById('sort-team').textContent = teamLabel;
-
-  document.getElementById('sort-time').classList.toggle('active', sortKey === 'time');
-  document.getElementById('sort-team').classList.toggle('active', sortKey === 'team');
-
+function toggleTimeSort() {
+  sortAsc = !sortAsc;
+  document.getElementById('sort-time').textContent = sortAsc ? '↑ Oldest' : '↓ Newest';
   renderTrades();
+}
+
+function setTeamFilter(val) {
+  teamFilter = val || '';
+  renderTrades();
+}
+
+// Populate the team dropdown once.
+function buildTeamFilter() {
+  const sel = document.getElementById('team-filter');
+  Object.keys(TEAMS).sort((a, b) => getTeamName(a).localeCompare(getTeamName(b)))
+    .forEach(abbr => {
+      const o = document.createElement('option');
+      o.value = abbr; o.textContent = getTeamName(abbr);
+      sel.appendChild(o);
+    });
 }
 
 // ══════════════════════════════════════════════
@@ -1069,9 +1191,10 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// One side of the split card. The team logo fills the whole half edge-to-edge
-// as a background; a dedicated "View Lineup" button opens the lineup modal.
-function teamSide(abbrev, side, role) {
+// One side of the split card. The team logo fills the whole half as the card
+// background; the team name, role, the assets this team RECEIVES, and a lineup
+// button sit at the bottom under the logo.
+function teamSide(abbrev, side, role, gets) {
   const name      = getTeamName(abbrev) || 'Other NHL team';
   const known     = abbrev && TEAMS[abbrev];
   const logoUrl   = known ? getLogoUrl(abbrev) : '';
@@ -1082,6 +1205,9 @@ function teamSide(abbrev, side, role) {
     ? `<img class="ts-logo-bg" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.remove()">`
     : `<div class="ts-logo-bg ts-logo-fallback">🏒</div>`;
 
+  const chips = (gets || []).map(a =>
+    `<span class="asset-chip ${a.type}">${a.type === 'player' ? '🏒' : '🎟️'} ${esc(a.label)}</span>`).join('');
+
   return `
   <div class="team-side ${side}">
     ${bg}
@@ -1089,44 +1215,38 @@ function teamSide(abbrev, side, role) {
       ${abbrev ? `<span class="ts-abbr">${esc(abbrev)}</span>` : ''}
       <span class="ts-name">${esc(name)}</span>
       <span class="ts-role ${roleClass}">${roleLabel}</span>
+      ${chips ? `<div class="ts-assets">${chips}</div>` : ''}
       ${known
-        ? `<button class="lineup-btn" data-action="lineup" data-abbrev="${esc(abbrev)}">📋 View Lineup</button>`
+        ? `<button class="lineup-btn" data-action="lineup" data-abbrev="${esc(abbrev)}">📋 Lineup</button>`
         : ''}
     </div>
   </div>`;
 }
 
 function tradeCard(t) {
-  const isNew  = t._new;
-  const src    = t.sourceUrl || '';
-  const assets = t.assets && t.assets.length ? t.assets : [];
-
-  const assetRow = assets.length ? `
-    <div class="trade-assets">
-      ${assets.map(a => `<span class="asset-chip ${a.type}">${a.type === 'player' ? '🏒' : '🎟️'} ${esc(a.label)}</span>`).join('')}
-    </div>` : '';
+  const isNew = t._new;
+  const src   = t.sourceUrl || '';
+  // Map assets to the team that receives them.
+  const split = splitAssets(t.description);
 
   return `
-  <div class="trade-card${isNew ? ' is-new' : ''}" data-source="${esc(src)}"
+  <div class="trade-card collapsed${isNew ? ' is-new' : ''}" data-source="${esc(src)}"
        data-player="${esc(t.playerName || '')}" data-from="${esc(t.fromTeam || '')}" data-to="${esc(t.toTeam || '')}"
        title="Click for the trade source &amp; news">
     <div class="trade-top">
       <span class="badge badge-trade">TRADE</span>
       ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
-      <span class="trade-time">${relativeDate(t.date)}</span>
+      <span class="trade-time">🕒 ${esc(postedLabel(t))}</span>
       <span class="source-link-group">
         ${src ? `<a href="${esc(src)}" class="source-link" target="_blank" rel="noopener">📰 News</a>` : ''}
         ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener">💬 Reddit</a>` : ''}
       </span>
     </div>
-    <div class="trade-desc">${esc(t.description)}</div>
-    ${assetRow}
+    <div class="trade-desc clamp" title="${esc(t.description)}">${esc(t.description)}</div>
     <div class="trade-teams">
-      ${teamSide(t.fromTeam, 'left',  'loses')}
-      <div class="trade-mid">
-        <span class="trade-arrow">→</span>
-      </div>
-      ${teamSide(t.toTeam, 'right', 'acquires')}
+      ${teamSide(t.fromTeam, 'left',  'loses',    split.otherGets)}
+      <div class="trade-mid"><span class="trade-arrow">→</span></div>
+      ${teamSide(t.toTeam,   'right', 'acquires', split.acquirerGets)}
     </div>
   </div>`;
 }
@@ -1420,14 +1540,25 @@ async function poll() {
     const days  = Math.min(Math.max(currentDays, 7), MAX_DAYS);
     const fresh = await fetchTrades(days);
 
-    // Detect new trades
+    // Detect new trades and stamp when each was first seen (≈ posted time).
+    const nowMs = Date.now();
     const newOnes = [];
     for (const t of fresh) {
       if (!seenIds.has(t.id)) {
         t._new = true; newOnes.push(t); seenIds.add(t.id);
+        // New trades dated today get the live timestamp; backfilled older ones
+        // anchor to noon of their trade date so the time reads sensibly.
+        seenTimes[t.id] = (t.date.slice(0,10) === toISO(new Date()))
+          ? nowMs
+          : (Date.parse(t.date.slice(0,10) + 'T12:00:00') || nowMs);
       }
     }
-    try { localStorage.setItem('nhltt_seen', JSON.stringify([...seenIds].slice(-2000))); } catch {}
+    try {
+      localStorage.setItem('nhltt_seen', JSON.stringify([...seenIds].slice(-2000)));
+      // Keep only timestamps for ids we still track.
+      const keep = {}; for (const id of seenIds) if (seenTimes[id]) keep[id] = seenTimes[id];
+      localStorage.setItem('nhltt_seen_times', JSON.stringify(keep));
+    } catch {}
 
     for (const t of newOnes) sendNotif(t);
 
@@ -1472,6 +1603,7 @@ document.addEventListener('visibilitychange', () => {
 //  BOOT
 // ══════════════════════════════════════════════
 initTradeDelegation();
+buildTeamFilter();
 updateNotifBanner();
 poll();
 </script>
