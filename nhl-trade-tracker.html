@@ -487,6 +487,7 @@ header {
 const POLL_MS      = 2 * 60 * 1000;  // 2 minutes
 const MAX_DAYS     = 30;
 const NHL_BASE     = 'https://api-web.nhle.com/v1';
+const ESPN_BASE    = 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl';
 
 // Known trade-type codes in the NHL API
 const TRADE_CODES  = new Set(['TRADE', 'ET', 'TR', 'PL']);
@@ -501,7 +502,7 @@ let currentDays  = 1;
 let allTrades    = [];         // all fetched trades (sorted newest first)
 let pollTimer    = null;
 let isPolling    = false;
-let dataSource   = 'NHL';
+let dataSource   = '—';        // which API supplied data
 
 // Seen trade IDs persisted across page loads
 const seenIds = new Set(
@@ -530,15 +531,13 @@ function timeNow() {
 }
 
 // ══════════════════════════════════════════════
-//  NHL API  —  fetch one date
+//  NHL API  —  fetch one day
 // ══════════════════════════════════════════════
-async function fetchDay(compact) {
-  // Try direct first; fall back to CORS proxy
+async function fetchNHLDay(compact) {
   const endpoints = [
     `${NHL_BASE}/transactions/${compact}`,
     `${CORS_PROXY}${encodeURIComponent(`${NHL_BASE}/transactions/${compact}`)}`,
   ];
-
   for (const url of endpoints) {
     try {
       const r = await fetch(url, {
@@ -547,11 +546,7 @@ async function fetchDay(compact) {
       });
       if (!r.ok) continue;
       const json = await r.json();
-
-      // corsproxy wraps content sometimes
-      if (json.contents) {
-        try { return JSON.parse(json.contents); } catch {}
-      }
+      if (json.contents) { try { return JSON.parse(json.contents); } catch {} }
       return json;
     } catch { /* try next */ }
   }
@@ -559,87 +554,135 @@ async function fetchDay(compact) {
 }
 
 // ══════════════════════════════════════════════
-//  PARSE  —  normalise a raw transaction object
+//  ESPN API  —  fetch a date range (one call)
 // ══════════════════════════════════════════════
-function normaliseTrade(tx) {
+async function fetchESPN(days) {
+  const endD   = toCompact(new Date());
+  const startD = toCompact(daysBack(days - 1));
+  const url    = `${ESPN_BASE}/transactions?dates=${startD}-${endD}&limit=300`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+// ══════════════════════════════════════════════
+//  PARSE — NHL transaction object
+// ══════════════════════════════════════════════
+function normaliseNHL(tx) {
   const typeCode = String(tx.typeCode || tx.type || '').toUpperCase().trim();
   const desc     = String(tx.description || '').toLowerCase();
-
-  const looksTrade =
+  const isTrade  =
     TRADE_CODES.has(typeCode) ||
     desc.includes('traded') ||
     desc.includes('acquired') ||
     desc.includes('in exchange');
+  if (!isTrade) return null;
 
-  if (!looksTrade) return null;
-
-  // Date — API can return YYYYMMDD or YYYY-MM-DD
   let rawDate = tx.tradedOn || tx.transactionDate || tx.date || '';
-  if (rawDate.length === 8) {
+  if (rawDate.length === 8)
     rawDate = `${rawDate.slice(0,4)}-${rawDate.slice(4,6)}-${rawDate.slice(6,8)}`;
-  }
 
-  // Player name
   let playerName = '';
   if (tx.player) {
-    playerName = [tx.player.firstName, tx.player.lastName]
-      .filter(Boolean).join(' ') || tx.player.fullName || '';
+    playerName = [tx.player.firstName, tx.player.lastName].filter(Boolean).join(' ')
+                 || tx.player.fullName || '';
   } else if (tx.firstName) {
     playerName = `${tx.firstName} ${tx.lastName || ''}`.trim();
   }
 
-  // Teams
   const fromAbbr = tx.fromTeam?.abbrev || tx.fromTeam?.triCode || tx.fromTeam?.name || '';
   const toAbbr   = tx.toTeam?.abbrev   || tx.toTeam?.triCode   || tx.toTeam?.name   || '';
 
-  // Build readable description if the API didn't provide one
   let description = tx.description || '';
-  if (!description) {
+  if (!description)
     description = playerName
       ? `${playerName} traded${fromAbbr ? ' from ' + fromAbbr : ''}${toAbbr ? ' to ' + toAbbr : ''}`
       : `Trade: ${fromAbbr || '?'} → ${toAbbr || '?'}`;
-  }
 
   return {
-    id:          String(tx.id || tx.transactionId || Math.random().toString(36).slice(2)),
-    date:        rawDate,
+    id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
+    date: rawDate,
     description,
-    fromTeam:    fromAbbr,
-    toTeam:      toAbbr,
+    fromTeam: fromAbbr,
+    toTeam:   toAbbr,
     playerName,
-    typeCode,
+    source: 'NHL',
   };
 }
 
 // ══════════════════════════════════════════════
-//  FETCH TRADES  —  for the last N days
+//  PARSE — ESPN transaction object
+// ══════════════════════════════════════════════
+function normaliseESPN(tx) {
+  const typeText = (tx.type?.text || tx.typeText || '').toLowerCase();
+  const desc     = (tx.description || tx.headline || '').toLowerCase();
+  const isTrade  =
+    typeText.includes('trade') ||
+    desc.includes('traded') ||
+    desc.includes('acquired') ||
+    desc.includes('in exchange for');
+  if (!isTrade) return null;
+
+  // ESPN date is ISO-8601 with time
+  const rawDate = (tx.date || '').slice(0, 10);
+  if (!rawDate) return null;
+
+  const description = tx.description || tx.headline || '';
+  const fromAbbr    = tx.fromTeam?.abbreviation || tx.fromTeam?.displayName || '';
+  const toAbbr      = tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '';
+  const playerName  = tx.athletes?.[0]?.displayName || tx.athlete?.displayName || '';
+
+  return {
+    id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
+    date: rawDate,
+    description,
+    fromTeam: fromAbbr,
+    toTeam:   toAbbr,
+    playerName,
+    source: 'ESPN',
+  };
+}
+
+// ══════════════════════════════════════════════
+//  FETCH TRADES  —  NHL first, ESPN as fallback
 // ══════════════════════════════════════════════
 async function fetchTrades(days) {
-  const trades = [];
-  const seen   = new Set();
+  const trades  = [];
+  const seen    = new Set();
+  let   gotData = false;
 
-  for (let i = 0; i < days; i++) {
-    const compact = toCompact(daysBack(i));
-    let data;
-    try { data = await fetchDay(compact); } catch { data = null; }
+  // ── Try NHL API day-by-day ──
+  const nhlResults = await Promise.all(
+    Array.from({ length: days }, (_, i) => fetchNHLDay(toCompact(daysBack(i))))
+  );
 
+  for (const data of nhlResults) {
     if (!data) continue;
-
-    const txList = Array.isArray(data.transactions)
-      ? data.transactions
-      : Array.isArray(data.data)
-        ? data.data
-        : [];
-
+    const txList = Array.isArray(data.transactions) ? data.transactions
+                 : Array.isArray(data.data)         ? data.data
+                 : [];
     for (const tx of txList) {
-      const trade = normaliseTrade(tx);
-      if (trade && !seen.has(trade.id)) {
-        seen.add(trade.id);
-        trades.push(trade);
-      }
+      const t = normaliseNHL(tx);
+      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); gotData = true; }
     }
   }
 
+  // ── Fallback: ESPN (one call covers the full range) ──
+  if (!gotData) {
+    const espnData = await fetchESPN(days);
+    const txList   = Array.isArray(espnData?.transactions) ? espnData.transactions
+                   : Array.isArray(espnData?.items)        ? espnData.items
+                   : [];
+    for (const tx of txList) {
+      const t = normaliseESPN(tx);
+      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); }
+    }
+    if (txList.length > 0) gotData = true;
+  }
+
+  dataSource = trades.length > 0 ? (trades[0]?.source || 'NHL') : '—';
   return trades.sort((a, b) => b.date.localeCompare(a.date));
 }
 
@@ -731,27 +774,29 @@ function esc(str) {
 }
 
 function renderTrades() {
-  const cutoff   = toISO(daysBack(currentDays));
-  const filtered = allTrades.filter(t => t.date.slice(0,10) >= cutoff);
   const todayStr = toISO(new Date());
+  // "Today" = only today; other filters = last N calendar days
+  const cutoff   = currentDays === 1 ? todayStr : toISO(daysBack(currentDays));
+  const filtered = allTrades.filter(t => t.date.slice(0,10) >= cutoff);
   const today    = allTrades.filter(t => t.date.slice(0,10) === todayStr).length;
 
   document.getElementById('stat-total').textContent   = filtered.length;
   document.getElementById('stat-today').textContent   = today;
   document.getElementById('stat-period').textContent  =
-    `in last ${currentDays === 1 ? '24 h' : currentDays + ' days'}`;
+    currentDays === 1 ? 'today' : `in last ${currentDays} days`;
   document.getElementById('count-label').textContent  =
     `${filtered.length} trade${filtered.length !== 1 ? 's' : ''}`;
 
   const area = document.getElementById('trades-area');
 
   if (filtered.length === 0) {
+    const windowLabel = currentDays === 1 ? 'today' : `the last ${currentDays} days`;
     area.innerHTML = `
       <div class="state-box">
         <div class="icon">🏒</div>
-        <h3>No trades in this window</h3>
-        <p>No trades detected in the last ${currentDays === 1 ? '24 hours' : currentDays + ' days'}.
-        The tracker refreshes automatically every 2 minutes.</p>
+        <h3>No trades reported ${windowLabel === 'today' ? 'today' : 'in this window'}</h3>
+        <p>No trades have been reported ${windowLabel}. The tracker checks every 2 minutes and will
+        notify you the moment one is announced.</p>
       </div>`;
     return;
   }
@@ -799,7 +844,8 @@ async function poll() {
   setStatus('loading');
 
   try {
-    const daysToFetch = Math.min(Math.max(currentDays, 3), MAX_DAYS);
+    // Always fetch at least 7 days so "Today" shows current trades on first load
+    const daysToFetch = Math.min(Math.max(currentDays, 7), MAX_DAYS);
     const fresh = await fetchTrades(daysToFetch);
 
     // Detect new trades since last poll
@@ -826,7 +872,7 @@ async function poll() {
     const now = timeNow();
     document.getElementById('stat-refresh').textContent = now;
     document.getElementById('footer-text').textContent =
-      `Data from NHL public API · Last updated ${now} · Refreshes every 2 min`;
+      `Data via ${dataSource} API · Last updated ${now} · Refreshes every 2 min`;
 
     // Flash page title for new trades
     if (newTrades.length > 0) {
