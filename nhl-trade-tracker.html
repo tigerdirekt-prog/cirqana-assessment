@@ -11,17 +11,20 @@
   --bg: #080c18;
   --surface: #0f1624;
   --surface2: #172035;
+  --surface3: #1e2d4a;
   --border: #1e2d4a;
+  --border2: #243550;
   --accent: #00b4d8;
-  --accent-dim: rgba(0,180,216,0.12);
   --gold: #f59e0b;
-  --gold-dim: rgba(245,158,11,0.12);
+  --gold-dim: rgba(245,158,11,.12);
   --green: #10b981;
-  --green-dim: rgba(16,185,129,0.12);
+  --green-dim: rgba(16,185,129,.12);
   --red: #ef4444;
+  --red-dim: rgba(239,68,68,.12);
   --text: #dde3ef;
   --text-muted: #5a6f8f;
   --radius: 10px;
+  --modal-z: 500;
 }
 
 body {
@@ -29,245 +32,132 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  line-height: 1.4;
 }
 
-/* ─── HEADER ─── */
+/* ── HEADER ── */
 header {
   position: sticky; top: 0; z-index: 200;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 0 24px;
   height: 60px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.logo {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logo-puck { font-size: 1.4rem; }
-
-.logo-text em {
-  font-style: normal;
-  color: var(--accent);
-}
-
-.live-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--green-dim);
-  border: 1px solid rgba(16,185,129,0.25);
-  border-radius: 20px;
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--green);
-}
-
-.live-badge.error {
-  background: rgba(239,68,68,0.1);
-  border-color: rgba(239,68,68,0.25);
-  color: var(--red);
-}
-
-.live-badge.loading {
-  background: var(--gold-dim);
-  border-color: rgba(245,158,11,0.25);
-  color: var(--gold);
-}
-
-.pulse {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse 2s infinite;
-}
-
-.live-badge.error .pulse,
-.live-badge.loading .pulse {
-  animation: none;
-}
-
-@keyframes pulse {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.4; transform: scale(0.8); }
-}
-
-.header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.refresh-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-/* ─── NOTIFICATION BANNER ─── */
-#notif-banner {
-  background: linear-gradient(90deg, #0e1e3a, #111d38);
-  border-bottom: 1px solid var(--accent);
-  padding: 10px 24px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 0.85rem;
 }
+.logo { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.logo em { font-style: normal; color: var(--accent); }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--green-dim); border: 1px solid rgba(16,185,129,.25);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: .72rem; font-weight: 600; color: var(--green);
+}
+.live-badge.loading { background: var(--gold-dim); border-color: rgba(245,158,11,.25); color: var(--gold); }
+.live-badge.error   { background: var(--red-dim);  border-color: rgba(239,68,68,.25);  color: var(--red); }
+.pulse {
+  width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+  animation: pulse 2s infinite;
+}
+.live-badge.loading .pulse,
+.live-badge.error .pulse { animation: none; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+.header-right { margin-left: auto; display: flex; gap: 8px; }
+.hdr-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  border-radius: 6px; padding: 5px 11px; font-size: .78rem; cursor: pointer;
+  transition: all .2s;
+}
+.hdr-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ── NOTIFICATION BANNER ── */
+#notif-banner {
+  background: linear-gradient(90deg,#0e1e3a,#111d38);
+  border-bottom: 1px solid var(--accent);
+  padding: 10px 24px;
+  display: flex; align-items: center; gap: 14px;
+  font-size: .85rem;
+}
 #notif-banner.hidden { display: none; }
 #notif-banner .nb-icon { font-size: 1.3rem; flex-shrink: 0; }
 #notif-banner .nb-text { color: var(--text-muted); flex: 1; }
 #notif-banner .nb-text strong { color: var(--text); }
-
 .notif-btn {
-  flex-shrink: 0;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  padding: 7px 18px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.3px;
+  flex-shrink: 0; background: var(--accent); color: #000;
+  border: none; border-radius: 6px; padding: 7px 18px;
+  font-size: .8rem; font-weight: 700; cursor: pointer;
 }
-.notif-btn:hover { opacity: 0.85; }
-.notif-btn:disabled { opacity: 0.5; cursor: default; }
-.notif-btn.granted { background: var(--green); }
+.notif-btn:hover { opacity: .85; }
+.notif-btn:disabled { opacity: .5; cursor: default; }
 
-/* ─── MAIN LAYOUT ─── */
-.container {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
-}
+/* ── LAYOUT ── */
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px 56px; }
 
-/* ─── STATS ROW ─── */
+/* ── STATS ── */
 .stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-}
-
-.stat-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.stat-sub {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-/* ─── FILTERS ─── */
-.filter-row {
-  display: flex;
-  gap: 8px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
   margin-bottom: 20px;
-  overflow-x: auto;
-  padding-bottom: 2px;
 }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px;
+}
+.stat-label {
+  font-size: .67rem; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.stat-sub   { font-size: .73rem; color: var(--text-muted); margin-top: 4px; }
 
-.filter-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  border-radius: 20px;
-  padding: 6px 16px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.18s;
+/* ── CONTROLS BAR (sort + filter together) ── */
+.controls-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 20px;
 }
-.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-.filter-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #000;
-  font-weight: 700;
+.controls-label {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-muted); white-space: nowrap;
 }
+.pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: 20px; padding: 5px 14px;
+  font-size: .78rem; font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: all .18s;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #000; font-weight: 700;
+}
+.divider { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
 
-/* ─── SECTION HEADER ─── */
+/* ── SECTION HEADER ── */
 .section-header {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 14px;
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px;
 }
-
 .section-title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
+  font-size: .85rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-muted);
 }
-
 .section-count {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: var(--surface2);
-  border-radius: 10px;
-  padding: 1px 8px;
+  font-size: .73rem; color: var(--text-muted);
+  background: var(--surface2); border-radius: 10px; padding: 1px 8px;
 }
 
-/* ─── TRADE CARDS ─── */
-.trades-list { display: flex; flex-direction: column; gap: 10px; }
+/* ── TRADE CARDS ── */
+.trades-list { display: flex; flex-direction: column; gap: 12px; }
 
 .trade-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 3px solid var(--gold);
   border-radius: var(--radius);
-  padding: 16px 18px;
-  cursor: default;
-  transition: background 0.18s, transform 0.18s;
+  overflow: hidden;
+  transition: background .18s;
 }
-.trade-card:hover {
-  background: var(--surface2);
-}
-.trade-card.is-new {
-  border-left-color: var(--green);
-  animation: slideIn 0.35s ease-out;
-}
+.trade-card:hover { background: var(--surface2); }
+.trade-card.is-new { border-left-color: var(--green); animation: slideIn .35s ease-out; }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(-8px); }
@@ -275,161 +165,277 @@ header {
 }
 
 .trade-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 14px 18px 0;
 }
-
 .badge {
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 4px;
+  font-size: .6rem; font-weight: 800; letter-spacing: 1.2px;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
 }
-
-.badge-trade {
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px solid rgba(245,158,11,0.25);
+.badge-trade { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(245,158,11,.25); }
+.badge-new   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.trade-time  { font-size: .73rem; color: var(--text-muted); }
+.source-link {
+  margin-left: auto; font-size: .73rem; color: var(--accent);
+  text-decoration: none; white-space: nowrap;
+  border: 1px solid rgba(0,180,216,.2); border-radius: 4px; padding: 2px 8px;
+  transition: all .18s;
 }
-
-.badge-new {
-  background: var(--green-dim);
-  color: var(--green);
-  border: 1px solid rgba(16,185,129,0.3);
-}
-
-.trade-date {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-left: auto;
-}
+.source-link:hover { background: rgba(0,180,216,.1); }
 
 .trade-desc {
-  font-size: 0.95rem;
-  color: var(--text);
-  line-height: 1.55;
+  padding: 10px 18px 14px;
+  font-size: .93rem; line-height: 1.55; color: var(--text);
 }
 
+/* ── TEAM BLOCKS ── */
 .trade-teams {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
   border-top: 1px solid var(--border);
-  flex-wrap: wrap;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
 }
 
-.team-pill {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+.team-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  cursor: pointer; text-align: left;
+  transition: all .2s; width: 100%;
+}
+.team-btn:hover {
+  border-color: var(--accent);
+  background: rgba(0,180,216,.06);
+  transform: translateY(-1px);
+}
+.team-btn:hover .team-role { color: var(--accent); }
+.team-btn[title]::after {
+  /* subtle "click for lineup" hint */
+  display: none;
 }
 
-.arrow { color: var(--gold); font-size: 1rem; }
-.is-new .arrow { color: var(--green); }
-
-.trade-player {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-left: auto;
+.team-logo {
+  width: 48px; height: 48px;
+  object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+.team-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.team-abbr { font-size: .7rem; font-weight: 800; letter-spacing: 1px; color: var(--text-muted); }
+.team-full-name {
+  font-size: .88rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.team-role {
+  font-size: .68rem; color: var(--text-muted); margin-top: 2px;
+  text-transform: uppercase; letter-spacing: .8px;
+}
+.team-role.acquires { color: var(--green); }
+.team-role.loses    { color: var(--red); }
+.lineup-hint {
+  font-size: .64rem; color: var(--text-muted);
+  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 4px;
 }
 
-/* ─── EMPTY / LOADING STATES ─── */
+.trade-center {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+.trade-arrow { font-size: 1.4rem; color: var(--gold); }
+.trade-card.is-new .trade-arrow { color: var(--green); }
+.player-chip {
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 3px 10px;
+  font-size: .73rem; color: var(--text); white-space: nowrap;
+  max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── EMPTY / LOADING ── */
 .state-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 56px 24px;
-  text-align: center;
-  color: var(--text-muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 56px 24px;
+  text-align: center; color: var(--text-muted);
 }
-
-.state-box .icon { font-size: 2.8rem; margin-bottom: 16px; }
-.state-box h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 8px; }
-.state-box p { font-size: 0.85rem; line-height: 1.6; max-width: 380px; margin: 0 auto; }
-
+.state-box .icon { font-size: 2.6rem; margin-bottom: 14px; }
+.state-box h3 { font-size: 1rem; color: var(--text); margin-bottom: 8px; }
+.state-box p  { font-size: .83rem; line-height: 1.6; max-width: 380px; margin: 0 auto; }
 .spinner {
   width: 36px; height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .75s linear infinite;
   margin: 0 auto 16px;
+}
+.spinner-sm {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .75s linear infinite;
+  display: inline-block; vertical-align: middle; margin-right: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ─── FOOTER ─── */
+/* ── FOOTER ── */
 .footer {
-  margin-top: 28px;
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.7;
+  margin-top: 28px; text-align: center;
+  font-size: .73rem; color: var(--text-muted); line-height: 1.7;
 }
 
-/* ─── SOURCE BADGE ─── */
-.source-label {
-  display: inline-block;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-left: 8px;
-  vertical-align: middle;
+/* ── LINEUP MODAL ── */
+.modal {
+  position: fixed; inset: 0; z-index: var(--modal-z);
+  display: none;
+}
+.modal.open { display: flex; align-items: center; justify-content: center; }
+
+.modal-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.72); backdrop-filter: blur(4px);
 }
 
-/* ─── RESPONSIVE ─── */
-@media (max-width: 580px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+.modal-panel {
+  position: relative; z-index: 1;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+
+.modal-head {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#ml-logo {
+  width: 56px; height: 56px;
+  object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+.ml-team-block { flex: 1; min-width: 0; }
+#ml-name { font-size: 1.2rem; font-weight: 800; }
+#ml-sub  { font-size: .8rem; color: var(--text-muted); margin-top: 3px; }
+.modal-close-btn {
+  flex-shrink: 0; width: 32px; height: 32px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: 50%;
+  font-size: 1rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: all .18s;
+}
+.modal-close-btn:hover { background: var(--surface3); color: var(--text); }
+
+.modal-body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Impact pill */
+.impact-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.impact-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px; font-size: .82rem; font-weight: 700;
+}
+.impact-pill.incoming {
+  background: var(--green-dim); color: var(--green);
+  border: 1px solid rgba(16,185,129,.3);
+}
+.impact-pill.outgoing {
+  background: var(--red-dim); color: var(--red);
+  border: 1px solid rgba(239,68,68,.3);
+}
+.impact-player { font-size: .88rem; color: var(--text); font-weight: 600; }
+.impact-note { font-size: .78rem; color: var(--text-muted); }
+
+/* Lineup grid */
+.lineup-section { display: flex; flex-direction: column; gap: 8px; }
+.lineup-section-title {
+  font-size: .67rem; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-muted); font-weight: 700;
+}
+.lineup-grid { display: flex; flex-direction: column; gap: 4px; }
+.lineup-row {
+  display: grid; gap: 4px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
+}
+.lineup-row.fwd { grid-template-columns: 1fr 1fr 1fr; }
+.lineup-row.def { grid-template-columns: 1fr 1fr; }
+.lineup-row.goal { grid-template-columns: 1fr 1fr; }
+.lineup-cell {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.lineup-pos { font-size: .6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; }
+.lineup-pname {
+  font-size: .84rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lineup-pname.highlight { color: var(--green); }
+.lineup-pname.departing { color: var(--red); text-decoration: line-through; }
+
+.lineup-loading {
+  padding: 28px; text-align: center;
+  font-size: .85rem; color: var(--text-muted);
+}
+.lineup-unavail {
+  background: var(--surface2); border: 1px dashed var(--border);
+  border-radius: 8px; padding: 20px; text-align: center;
+  font-size: .85rem; color: var(--text-muted); line-height: 1.6;
+}
+
+.modal-foot {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; justify-content: center; flex-shrink: 0;
+}
+.dfo-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent); color: #000;
+  border-radius: 8px; padding: 10px 22px;
+  font-size: .85rem; font-weight: 700; text-decoration: none;
+  transition: opacity .18s;
+}
+.dfo-btn:hover { opacity: .85; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .stats-row { grid-template-columns: repeat(2,1fr); }
   .stat-card:last-child { grid-column: span 2; }
-  header { padding: 0 16px; }
-  #notif-banner { flex-wrap: wrap; gap: 8px; }
-  .container { padding: 16px 12px 40px; }
+  header { padding: 0 14px; }
+  .container { padding: 14px 10px 40px; }
+  .trade-teams { grid-template-columns: 1fr; gap: 8px; }
+  .trade-center { flex-direction: row; }
+  .trade-arrow { transform: rotate(90deg); }
+  .team-btn { justify-content: center; }
+  .modal-head { gap: 12px; padding: 16px; }
+  .modal-body { padding: 14px 16px; }
+  .modal-foot { padding: 14px 16px; }
+  .lineup-row.fwd  { grid-template-columns: 1fr; }
+  .lineup-row.goal { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body>
 
-<!-- ═══ HEADER ═══ -->
 <header>
-  <div class="logo">
-    <span class="logo-puck">🏒</span>
-    <span class="logo-text">NHL <em>Trade Tracker</em></span>
-  </div>
+  <div class="logo">🏒 NHL <em>Trade Tracker</em></div>
   <div class="live-badge loading" id="live-badge">
     <div class="pulse"></div>
     <span id="live-text">Connecting</span>
   </div>
   <div class="header-right">
-    <button class="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
+    <button class="hdr-btn" onclick="manualRefresh()">↻ Refresh</button>
   </div>
 </header>
 
-<!-- ═══ NOTIFICATION BANNER ═══ -->
 <div id="notif-banner">
   <div class="nb-icon">🔔</div>
   <div class="nb-text">
-    <strong>Get push notifications</strong> — get alerted the moment a trade drops, even when this tab is in the background
+    <strong>Get push notifications</strong> — alerted the moment a trade drops, even in a background tab
   </div>
   <button class="notif-btn" id="notif-btn" onclick="requestNotifications()">Enable Alerts</button>
 </div>
 
-<!-- ═══ MAIN ═══ -->
 <div class="container">
 
-  <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-label">Trades Found</div>
@@ -443,84 +449,151 @@ header {
     </div>
     <div class="stat-card">
       <div class="stat-label">Last Refresh</div>
-      <div class="stat-value" id="stat-refresh" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="stat-value" id="stat-refresh" style="font-size:1.05rem;padding-top:7px">—</div>
       <div class="stat-sub">checks every 2 min</div>
     </div>
   </div>
 
-  <!-- Filters -->
-  <div class="filter-row" id="filter-row">
-    <button class="filter-btn active" data-days="1"  onclick="setFilter(this,1)">Today</button>
-    <button class="filter-btn"        data-days="3"  onclick="setFilter(this,3)">3 Days</button>
-    <button class="filter-btn"        data-days="7"  onclick="setFilter(this,7)">7 Days</button>
-    <button class="filter-btn"        data-days="30" onclick="setFilter(this,30)">30 Days</button>
+  <!-- Controls: sort + filter in one bar -->
+  <div class="controls-bar">
+    <span class="controls-label">Sort:</span>
+    <div class="pill-group">
+      <button class="pill active" id="sort-time" onclick="setSort('time')">↓ Newest</button>
+      <button class="pill"        id="sort-team" onclick="setSort('team')">Team A→Z</button>
+    </div>
+    <div class="divider"></div>
+    <span class="controls-label">Show:</span>
+    <div class="pill-group">
+      <button class="pill active" data-days="1"  onclick="setFilter(this,1)">Today</button>
+      <button class="pill"        data-days="3"  onclick="setFilter(this,3)">3 Days</button>
+      <button class="pill"        data-days="7"  onclick="setFilter(this,7)">7 Days</button>
+      <button class="pill"        data-days="30" onclick="setFilter(this,30)">30 Days</button>
+    </div>
   </div>
 
-  <!-- Section header -->
   <div class="section-header">
     <span class="section-title">Recent Trades</span>
     <span class="section-count" id="count-label">—</span>
   </div>
 
-  <!-- Trades list -->
   <div id="trades-area">
     <div class="state-box">
       <div class="spinner"></div>
       <h3>Loading trade data…</h3>
-      <p>Fetching the latest NHL transaction data from the official API.</p>
+      <p>Fetching the latest NHL transactions.</p>
     </div>
   </div>
 
-  <!-- Footer -->
   <div class="footer" id="footer-text">
-    Data sourced from the NHL public API · Polling every 2 minutes
+    NHL public API · polling every 2 min
   </div>
+</div>
 
-</div><!-- /container -->
+<!-- ═══ LINEUP MODAL ═══ -->
+<div id="lineup-modal" class="modal" role="dialog" aria-modal="true" aria-label="Team lineup">
+  <div class="modal-backdrop" onclick="closeLineup()"></div>
+  <div class="modal-panel">
+    <div class="modal-head">
+      <img id="ml-logo" src="" alt="" onerror="this.style.display='none'">
+      <div class="ml-team-block">
+        <div id="ml-name">Team Lineup</div>
+        <div id="ml-sub">Current line combinations · via Daily Faceoff</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeLineup()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="lineup-loading">
+        <span class="spinner-sm"></span>Loading lineup…
+      </div>
+    </div>
+    <div class="modal-foot">
+      <a id="ml-dfo-link" href="#" target="_blank" rel="noopener noreferrer" class="dfo-btn">
+        View Full Lines on Daily Faceoff ↗
+      </a>
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
 
 // ══════════════════════════════════════════════
-//  CONFIG
+//  TEAMS TABLE  (abbrev → metadata)
 // ══════════════════════════════════════════════
-const POLL_MS      = 2 * 60 * 1000;  // 2 minutes
-const MAX_DAYS     = 30;
-const NHL_BASE     = 'https://api-web.nhle.com/v1';
-const ESPN_BASE    = 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl';
+const TEAMS = {
+  ANA: { name: 'Anaheim Ducks',         slug: 'anaheim-ducks'         },
+  BOS: { name: 'Boston Bruins',          slug: 'boston-bruins'         },
+  BUF: { name: 'Buffalo Sabres',         slug: 'buffalo-sabres'        },
+  CGY: { name: 'Calgary Flames',         slug: 'calgary-flames'        },
+  CAR: { name: 'Carolina Hurricanes',    slug: 'carolina-hurricanes'   },
+  CHI: { name: 'Chicago Blackhawks',     slug: 'chicago-blackhawks'    },
+  COL: { name: 'Colorado Avalanche',     slug: 'colorado-avalanche'    },
+  CBJ: { name: 'Columbus Blue Jackets',  slug: 'columbus-blue-jackets' },
+  DAL: { name: 'Dallas Stars',           slug: 'dallas-stars'          },
+  DET: { name: 'Detroit Red Wings',      slug: 'detroit-red-wings'     },
+  EDM: { name: 'Edmonton Oilers',        slug: 'edmonton-oilers'       },
+  FLA: { name: 'Florida Panthers',       slug: 'florida-panthers'      },
+  LAK: { name: 'Los Angeles Kings',      slug: 'los-angeles-kings'     },
+  MIN: { name: 'Minnesota Wild',         slug: 'minnesota-wild'        },
+  MTL: { name: 'Montréal Canadiens',     slug: 'montreal-canadiens'    },
+  NSH: { name: 'Nashville Predators',    slug: 'nashville-predators'   },
+  NJD: { name: 'New Jersey Devils',      slug: 'new-jersey-devils'     },
+  NYI: { name: 'New York Islanders',     slug: 'new-york-islanders'    },
+  NYR: { name: 'New York Rangers',       slug: 'new-york-rangers'      },
+  OTT: { name: 'Ottawa Senators',        slug: 'ottawa-senators'       },
+  PHI: { name: 'Philadelphia Flyers',    slug: 'philadelphia-flyers'   },
+  PIT: { name: 'Pittsburgh Penguins',    slug: 'pittsburgh-penguins'   },
+  SEA: { name: 'Seattle Kraken',         slug: 'seattle-kraken'        },
+  SJS: { name: 'San Jose Sharks',        slug: 'san-jose-sharks'       },
+  STL: { name: 'St. Louis Blues',        slug: 'st-louis-blues'        },
+  TBL: { name: 'Tampa Bay Lightning',    slug: 'tampa-bay-lightning'   },
+  TOR: { name: 'Toronto Maple Leafs',    slug: 'toronto-maple-leafs'   },
+  UTA: { name: 'Utah Hockey Club',       slug: 'utah-hockey-club'      },
+  VAN: { name: 'Vancouver Canucks',      slug: 'vancouver-canucks'     },
+  VGK: { name: 'Vegas Golden Knights',   slug: 'vegas-golden-knights'  },
+  WSH: { name: 'Washington Capitals',    slug: 'washington-capitals'   },
+  WPG: { name: 'Winnipeg Jets',          slug: 'winnipeg-jets'         },
+};
 
-// Known trade-type codes in the NHL API
-const TRADE_CODES  = new Set(['TRADE', 'ET', 'TR', 'PL']);
+function getTeamName(abbrev) {
+  return TEAMS[abbrev]?.name || abbrev || '';
+}
 
-// CORS proxy — used only if direct NHL API is blocked
-const CORS_PROXY   = 'https://corsproxy.io/?url=';
+function getLogoUrl(abbrev) {
+  return `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
+}
 
 // ══════════════════════════════════════════════
-//  STATE
+//  CONFIG & STATE
 // ══════════════════════════════════════════════
+const POLL_MS    = 2 * 60 * 1000;
+const MAX_DAYS   = 30;
+const NHL_BASE   = 'https://api-web.nhle.com/v1';
+const ESPN_BASE  = 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl';
+const CORS_PROXY = 'https://corsproxy.io/?url=';
+
 let currentDays  = 1;
-let allTrades    = [];         // all fetched trades (sorted newest first)
+let sortKey      = 'time';   // 'time' | 'team'
+let sortAsc      = false;    // time: false = newest first; team: false = A→Z
+let allTrades    = [];
 let pollTimer    = null;
 let isPolling    = false;
-let dataSource   = '—';        // which API supplied data
+let dataSource   = '—';
 
-// Seen trade IDs persisted across page loads
-const seenIds = new Set(
-  JSON.parse(localStorage.getItem('nhltt_seen') || '[]')
-);
+const seenIds = new Set(JSON.parse(localStorage.getItem('nhltt_seen') || '[]'));
 
 // ══════════════════════════════════════════════
 //  DATE HELPERS
 // ══════════════════════════════════════════════
-function toISO(d)     { return d.toISOString().slice(0, 10); }         // YYYY-MM-DD
-function toCompact(d) { return toISO(d).replace(/-/g, ''); }           // YYYYMMDD
+function toISO(d)     { return d.toISOString().slice(0, 10); }
+function toCompact(d) { return toISO(d).replace(/-/g, ''); }
 function daysBack(n)  { const d = new Date(); d.setDate(d.getDate() - n); return d; }
 
-function relativeDate(isoStr) {
-  if (!isoStr) return '';
+function relativeDate(iso) {
+  if (!iso) return '';
   const today = toISO(new Date());
   const yest  = toISO(daysBack(1));
-  const d     = isoStr.slice(0, 10);
+  const d     = iso.slice(0, 10);
   if (d === today) return 'Today';
   if (d === yest)  return 'Yesterday';
   return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -531,35 +604,32 @@ function timeNow() {
 }
 
 // ══════════════════════════════════════════════
-//  NHL API  —  fetch one day
+//  NHL API — fetch one date
 // ══════════════════════════════════════════════
 async function fetchNHLDay(compact) {
-  const endpoints = [
+  const urls = [
     `${NHL_BASE}/transactions/${compact}`,
     `${CORS_PROXY}${encodeURIComponent(`${NHL_BASE}/transactions/${compact}`)}`,
   ];
-  for (const url of endpoints) {
+  for (const url of urls) {
     try {
-      const r = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
+      const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) });
       if (!r.ok) continue;
-      const json = await r.json();
-      if (json.contents) { try { return JSON.parse(json.contents); } catch {} }
-      return json;
-    } catch { /* try next */ }
+      const j = await r.json();
+      if (j.contents) { try { return JSON.parse(j.contents); } catch {} }
+      return j;
+    } catch {}
   }
   return null;
 }
 
 // ══════════════════════════════════════════════
-//  ESPN API  —  fetch a date range (one call)
+//  ESPN API — one call for full date range
 // ══════════════════════════════════════════════
 async function fetchESPN(days) {
-  const endD   = toCompact(new Date());
-  const startD = toCompact(daysBack(days - 1));
-  const url    = `${ESPN_BASE}/transactions?dates=${startD}-${endD}&limit=300`;
+  const end   = toCompact(new Date());
+  const start = toCompact(daysBack(days - 1));
+  const url   = `${ESPN_BASE}/transactions?dates=${start}-${end}&limit=300`;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
     if (!r.ok) return null;
@@ -568,16 +638,30 @@ async function fetchESPN(days) {
 }
 
 // ══════════════════════════════════════════════
-//  PARSE — NHL transaction object
+//  PARSE — detect if description contains a real player (not just picks)
 // ══════════════════════════════════════════════
+const TRADE_CODES = new Set(['TRADE', 'ET', 'TR', 'PL']);
+
+function isDraftCapital(text) {
+  const t = text.toLowerCase();
+  return t.includes('draft pick') || t.includes('round pick') ||
+         t.includes('conditional') || /\d+st|\d+nd|\d+rd|\d+th/.test(t);
+}
+
+function buildRedditLink(trade) {
+  const q = trade.playerName
+    ? `${trade.playerName} traded`
+    : `${trade.fromTeam || ''} ${trade.toTeam || ''} trade`;
+  return `https://www.reddit.com/r/hockey/search/?q=${encodeURIComponent(q)}&sort=new&restrict_sr=on&t=week`;
+}
+
+// ── NHL normaliser ──
 function normaliseNHL(tx) {
   const typeCode = String(tx.typeCode || tx.type || '').toUpperCase().trim();
   const desc     = String(tx.description || '').toLowerCase();
   const isTrade  =
     TRADE_CODES.has(typeCode) ||
-    desc.includes('traded') ||
-    desc.includes('acquired') ||
-    desc.includes('in exchange');
+    desc.includes('traded') || desc.includes('acquired') || desc.includes('in exchange');
   if (!isTrade) return null;
 
   let rawDate = tx.tradedOn || tx.transactionDate || tx.date || '';
@@ -594,38 +678,30 @@ function normaliseNHL(tx) {
 
   const fromAbbr = tx.fromTeam?.abbrev || tx.fromTeam?.triCode || tx.fromTeam?.name || '';
   const toAbbr   = tx.toTeam?.abbrev   || tx.toTeam?.triCode   || tx.toTeam?.name   || '';
-
   let description = tx.description || '';
   if (!description)
     description = playerName
       ? `${playerName} traded${fromAbbr ? ' from ' + fromAbbr : ''}${toAbbr ? ' to ' + toAbbr : ''}`
       : `Trade: ${fromAbbr || '?'} → ${toAbbr || '?'}`;
 
-  return {
+  const trade = {
     id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
-    date: rawDate,
-    description,
-    fromTeam: fromAbbr,
-    toTeam:   toAbbr,
-    playerName,
-    source: 'NHL',
+    date: rawDate, description, fromTeam: fromAbbr, toTeam: toAbbr,
+    playerName, source: 'NHL',
   };
+  trade.redditUrl = buildRedditLink(trade);
+  return trade;
 }
 
-// ══════════════════════════════════════════════
-//  PARSE — ESPN transaction object
-// ══════════════════════════════════════════════
+// ── ESPN normaliser ──
 function normaliseESPN(tx) {
-  const typeText = (tx.type?.text || tx.typeText || '').toLowerCase();
+  const typeText = (tx.type?.text || '').toLowerCase();
   const desc     = (tx.description || tx.headline || '').toLowerCase();
   const isTrade  =
-    typeText.includes('trade') ||
-    desc.includes('traded') ||
-    desc.includes('acquired') ||
-    desc.includes('in exchange for');
+    typeText.includes('trade') || desc.includes('traded') ||
+    desc.includes('acquired') || desc.includes('in exchange');
   if (!isTrade) return null;
 
-  // ESPN date is ISO-8601 with time
   const rawDate = (tx.date || '').slice(0, 10);
   if (!rawDate) return null;
 
@@ -634,194 +710,234 @@ function normaliseESPN(tx) {
   const toAbbr      = tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '';
   const playerName  = tx.athletes?.[0]?.displayName || tx.athlete?.displayName || '';
 
-  return {
+  const trade = {
     id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
-    date: rawDate,
-    description,
-    fromTeam: fromAbbr,
-    toTeam:   toAbbr,
-    playerName,
-    source: 'ESPN',
+    date: rawDate, description, fromTeam: fromAbbr, toTeam: toAbbr,
+    playerName, source: 'ESPN',
   };
+  trade.redditUrl = buildRedditLink(trade);
+  return trade;
 }
 
 // ══════════════════════════════════════════════
-//  FETCH TRADES  —  NHL first, ESPN as fallback
+//  FETCH TRADES — NHL primary, ESPN fallback
 // ══════════════════════════════════════════════
 async function fetchTrades(days) {
-  const trades  = [];
-  const seen    = new Set();
-  let   gotData = false;
+  const trades = [];
+  const seen   = new Set();
+  let   gotAny = false;
 
-  // ── Try NHL API day-by-day ──
-  const nhlResults = await Promise.all(
+  // NHL: parallel requests for each day
+  const nhlDays = await Promise.all(
     Array.from({ length: days }, (_, i) => fetchNHLDay(toCompact(daysBack(i))))
   );
-
-  for (const data of nhlResults) {
+  for (const data of nhlDays) {
     if (!data) continue;
-    const txList = Array.isArray(data.transactions) ? data.transactions
-                 : Array.isArray(data.data)         ? data.data
-                 : [];
-    for (const tx of txList) {
+    const list = Array.isArray(data.transactions) ? data.transactions
+               : Array.isArray(data.data)         ? data.data : [];
+    for (const tx of list) {
       const t = normaliseNHL(tx);
-      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); gotData = true; }
+      if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); gotAny = true; }
     }
   }
 
-  // ── Fallback: ESPN (one call covers the full range) ──
-  if (!gotData) {
+  // ESPN fallback
+  if (!gotAny) {
     const espnData = await fetchESPN(days);
-    const txList   = Array.isArray(espnData?.transactions) ? espnData.transactions
-                   : Array.isArray(espnData?.items)        ? espnData.items
-                   : [];
-    for (const tx of txList) {
+    const list = Array.isArray(espnData?.transactions) ? espnData.transactions
+               : Array.isArray(espnData?.items)        ? espnData.items : [];
+    for (const tx of list) {
       const t = normaliseESPN(tx);
       if (t && !seen.has(t.id)) { seen.add(t.id); trades.push(t); }
     }
-    if (txList.length > 0) gotData = true;
+    if (list.length > 0) gotAny = true;
   }
 
-  dataSource = trades.length > 0 ? (trades[0]?.source || 'NHL') : '—';
-  return trades.sort((a, b) => b.date.localeCompare(a.date));
+  dataSource = trades[0]?.source || '—';
+  return trades;
+}
+
+// ══════════════════════════════════════════════
+//  SORT
+// ══════════════════════════════════════════════
+function applySortFilter(trades) {
+  const todayStr = toISO(new Date());
+  const cutoff   = currentDays === 1 ? todayStr : toISO(daysBack(currentDays));
+  let filtered   = trades.filter(t => t.date.slice(0,10) >= cutoff);
+
+  if (sortKey === 'time') {
+    filtered.sort((a, b) => {
+      const cmp = b.date.localeCompare(a.date);
+      return sortAsc ? -cmp : cmp;
+    });
+  } else {
+    filtered.sort((a, b) => {
+      const an = getTeamName(a.fromTeam).toLowerCase();
+      const bn = getTeamName(b.fromTeam).toLowerCase();
+      const cmp = an.localeCompare(bn);
+      return sortAsc ? cmp : -cmp;
+    });
+  }
+  return filtered;
+}
+
+function setSort(key) {
+  if (sortKey === key) {
+    sortAsc = !sortAsc;
+  } else {
+    sortKey = key;
+    sortAsc = key === 'team' ? false : false; // default: newest / A→Z
+  }
+  // Update button labels
+  const timeLabel = sortKey === 'time'
+    ? (sortAsc ? '↑ Oldest' : '↓ Newest') : '↕ Time';
+  const teamLabel = sortKey === 'team'
+    ? (sortAsc ? 'Team Z→A' : 'Team A→Z') : 'Team A→Z';
+  document.getElementById('sort-time').textContent = timeLabel;
+  document.getElementById('sort-team').textContent = teamLabel;
+
+  document.getElementById('sort-time').classList.toggle('active', sortKey === 'time');
+  document.getElementById('sort-team').classList.toggle('active', sortKey === 'team');
+
+  renderTrades();
 }
 
 // ══════════════════════════════════════════════
 //  NOTIFICATIONS
 // ══════════════════════════════════════════════
-function canNotify() {
-  return 'Notification' in window && Notification.permission === 'granted';
-}
+function canNotify() { return 'Notification' in window && Notification.permission === 'granted'; }
 
 async function requestNotifications() {
-  if (!('Notification' in window)) {
-    alert('Your browser does not support desktop notifications.');
-    return;
-  }
+  if (!('Notification' in window)) { alert('Browser does not support notifications.'); return; }
   const perm = await Notification.requestPermission();
+  updateNotifBanner();
   if (perm === 'granted') {
-    localStorage.setItem('nhltt_notif', '1');
-    updateNotifBanner();
     new Notification('🏒 NHL Trade Tracker', {
-      body: "You're all set — we'll notify you the moment a trade is reported.",
-      icon: '/favicon.ico',
-      tag:  'nhltt-welcome',
+      body: "You're set — we'll alert you the moment a trade is announced.",
+      tag: 'nhltt-welcome',
     });
-  } else {
-    updateNotifBanner();
   }
 }
 
-function notify(trade) {
+function sendNotif(trade) {
   if (!canNotify()) return;
-
-  const title = `🔔 NHL Trade: ${trade.playerName || 'New deal'}`;
+  const title = `🔔 NHL Trade${trade.playerName ? ': ' + trade.playerName : ''}`;
   const body  = [
-    trade.fromTeam && trade.toTeam ? `${trade.fromTeam} → ${trade.toTeam}` : '',
+    trade.fromTeam && trade.toTeam ? `${getTeamName(trade.fromTeam)} → ${getTeamName(trade.toTeam)}` : '',
     trade.description,
   ].filter(Boolean).join('\n');
-
   const n = new Notification(title, {
-    body:             body.slice(0, 200),
-    tag:              `nhltt-${trade.id}`,
-    requireInteraction: true,
-    renotify:         false,
+    body: body.slice(0, 200), tag: `nhltt-${trade.id}`, requireInteraction: true,
   });
-
   n.onclick = () => { window.focus(); n.close(); };
 }
 
 function updateNotifBanner() {
   const banner = document.getElementById('notif-banner');
   const btn    = document.getElementById('notif-btn');
-
-  if (!('Notification' in window)) {
+  if (!('Notification' in window)) { banner.classList.add('hidden'); return; }
+  if (Notification.permission === 'granted') {
     banner.classList.add('hidden');
-    return;
-  }
-
-  const perm = Notification.permission;
-  if (perm === 'granted') {
-    banner.classList.add('hidden');
-  } else if (perm === 'denied') {
-    document.querySelector('#notif-banner .nb-text').innerHTML =
-      'Notifications are <strong>blocked</strong> for this page. Enable them in your browser/OS settings to get trade alerts.';
-    btn.textContent = 'Blocked';
-    btn.disabled    = true;
+  } else if (Notification.permission === 'denied') {
+    banner.querySelector('.nb-text').innerHTML =
+      'Notifications are <strong>blocked</strong>. Enable them in browser settings.';
+    btn.textContent = 'Blocked'; btn.disabled = true;
   }
 }
 
 // ══════════════════════════════════════════════
-//  LIVE STATUS
+//  STATUS
 // ══════════════════════════════════════════════
-function setStatus(state) {
-  // state: 'loading' | 'live' | 'error'
+function setStatus(s) {
   const badge = document.getElementById('live-badge');
   const text  = document.getElementById('live-text');
-  badge.className = 'live-badge ' + state;
-  text.textContent = state === 'loading' ? 'Updating…'
-                   : state === 'error'   ? 'Error — retrying'
-                   :                       'Live';
+  badge.className = 'live-badge ' + s;
+  text.textContent = s === 'loading' ? 'Updating…' : s === 'error' ? 'Error — retrying' : 'Live';
 }
 
 // ══════════════════════════════════════════════
-//  UI — RENDER TRADES
+//  RENDER TRADES
 // ══════════════════════════════════════════════
-function esc(str) {
-  return String(str || '')
+function esc(s) {
+  return String(s || '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderTrades() {
-  const todayStr = toISO(new Date());
-  // "Today" = only today; other filters = last N calendar days
-  const cutoff   = currentDays === 1 ? todayStr : toISO(daysBack(currentDays));
-  const filtered = allTrades.filter(t => t.date.slice(0,10) >= cutoff);
-  const today    = allTrades.filter(t => t.date.slice(0,10) === todayStr).length;
+function teamBlock(abbrev, role, tradeRef) {
+  const name    = getTeamName(abbrev);
+  const logoUrl = abbrev ? getLogoUrl(abbrev) : '';
+  const roleClass = role === 'acquires' ? 'acquires' : 'loses';
+  const roleLabel = role === 'acquires' ? 'Acquires' : 'Trades away';
+  const clickable = abbrev && TEAMS[abbrev];
 
-  document.getElementById('stat-total').textContent   = filtered.length;
-  document.getElementById('stat-today').textContent   = today;
-  document.getElementById('stat-period').textContent  =
+  const onclick = clickable
+    ? `openLineup(${JSON.stringify(abbrev)},${JSON.stringify(tradeRef)})`
+    : '';
+  const title = clickable ? `View ${name} lineup` : '';
+
+  return `
+  <button class="team-btn" ${onclick ? `onclick="${onclick}"` : ''} ${title ? `title="${esc(title)}"` : ''} ${!clickable ? 'style="cursor:default"' : ''}>
+    ${logoUrl ? `<img class="team-logo" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.style.opacity='.3'">` : '<div style="width:48px"></div>'}
+    <div class="team-text">
+      <span class="team-abbr">${esc(abbrev)}</span>
+      <span class="team-full-name">${esc(name)}</span>
+      <span class="team-role ${roleClass}">${roleLabel}</span>
+      ${clickable ? '<span class="lineup-hint">Click for lineup ↗</span>' : ''}
+    </div>
+  </button>`;
+}
+
+function tradeCard(t) {
+  const isNew     = t._new;
+  const showPlayer = t.playerName && !isDraftCapital(t.playerName);
+  const tradeRef  = { playerName: t.playerName, fromTeam: t.fromTeam, toTeam: t.toTeam };
+
+  return `
+  <div class="trade-card${isNew ? ' is-new' : ''}">
+    <div class="trade-top">
+      <span class="badge badge-trade">TRADE</span>
+      ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
+      <span class="trade-time">${relativeDate(t.date)}</span>
+      ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener">💬 Reddit discussion</a>` : ''}
+    </div>
+    <div class="trade-desc">${esc(t.description)}</div>
+    ${(t.fromTeam || t.toTeam) ? `
+    <div class="trade-teams">
+      ${t.fromTeam ? teamBlock(t.fromTeam, 'loses',    tradeRef) : '<div></div>'}
+      <div class="trade-center">
+        <span class="trade-arrow">→</span>
+        ${showPlayer ? `<span class="player-chip" title="${esc(t.playerName)}">${esc(t.playerName)}</span>` : ''}
+      </div>
+      ${t.toTeam ? teamBlock(t.toTeam, 'acquires', tradeRef) : '<div></div>'}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderTrades() {
+  const filtered  = applySortFilter(allTrades);
+  const todayStr  = toISO(new Date());
+  const today     = allTrades.filter(t => t.date.slice(0,10) === todayStr).length;
+
+  document.getElementById('stat-total').textContent  = filtered.length;
+  document.getElementById('stat-today').textContent  = today;
+  document.getElementById('stat-period').textContent =
     currentDays === 1 ? 'today' : `in last ${currentDays} days`;
-  document.getElementById('count-label').textContent  =
+  document.getElementById('count-label').textContent =
     `${filtered.length} trade${filtered.length !== 1 ? 's' : ''}`;
 
   const area = document.getElementById('trades-area');
-
   if (filtered.length === 0) {
-    const windowLabel = currentDays === 1 ? 'today' : `the last ${currentDays} days`;
+    const w = currentDays === 1 ? 'today' : `the last ${currentDays} days`;
     area.innerHTML = `
       <div class="state-box">
         <div class="icon">🏒</div>
-        <h3>No trades reported ${windowLabel === 'today' ? 'today' : 'in this window'}</h3>
-        <p>No trades have been reported ${windowLabel}. The tracker checks every 2 minutes and will
-        notify you the moment one is announced.</p>
+        <h3>No trades ${currentDays === 1 ? 'today' : 'in this window'}</h3>
+        <p>No trades reported ${w}. The tracker checks every 2 minutes and will alert you the moment one is announced.</p>
       </div>`;
     return;
   }
-
-  const cards = filtered.map(t => {
-    const isNew = t._new;
-    return `
-    <div class="trade-card${isNew ? ' is-new' : ''}">
-      <div class="trade-top">
-        <span class="badge badge-trade">TRADE</span>
-        ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
-        <span class="trade-date">${relativeDate(t.date)}</span>
-      </div>
-      <div class="trade-desc">${esc(t.description)}</div>
-      ${(t.fromTeam || t.toTeam || t.playerName) ? `
-      <div class="trade-teams">
-        ${t.fromTeam ? `<span class="team-pill">${esc(t.fromTeam)}</span>` : ''}
-        ${t.fromTeam && t.toTeam ? '<span class="arrow">→</span>' : ''}
-        ${t.toTeam   ? `<span class="team-pill">${esc(t.toTeam)}</span>` : ''}
-        ${t.playerName ? `<span class="trade-player">${esc(t.playerName)}</span>` : ''}
-      </div>` : ''}
-    </div>`;
-  }).join('');
-
-  area.innerHTML = `<div class="trades-list">${cards}</div>`;
+  area.innerHTML = `<div class="trades-list">${filtered.map(tradeCard).join('')}</div>`;
 }
 
 // ══════════════════════════════════════════════
@@ -829,10 +945,222 @@ function renderTrades() {
 // ══════════════════════════════════════════════
 function setFilter(btn, days) {
   currentDays = days;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-days]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderTrades();
 }
+
+// ══════════════════════════════════════════════
+//  LINEUP MODAL — fetch + parse daily faceoff
+// ══════════════════════════════════════════════
+async function fetchDFLineup(slug) {
+  const url      = `https://www.dailyfaceoff.com/teams/${slug}/line-combinations`;
+  const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+  try {
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return null;
+    let text = await r.text();
+    // corsproxy may wrap as JSON
+    try { const j = JSON.parse(text); if (j.contents) text = j.contents; } catch {}
+    return parseDFHTML(text);
+  } catch { return null; }
+}
+
+function parseDFHTML(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const result = { forwards: [], defense: [], goalies: [] };
+
+  // ── Strategy 1: Next.js embedded JSON (__NEXT_DATA__) ──
+  const nextEl = doc.querySelector('#__NEXT_DATA__');
+  if (nextEl) {
+    try {
+      const nd    = JSON.parse(nextEl.textContent);
+      const props = nd?.props?.pageProps || nd?.props || {};
+      const raw   = props.lines || props.lineups || props.lineCombinations
+                  || props.teamData?.lines || props.data?.lines;
+      if (raw) return parseStructuredLines(raw);
+    } catch {}
+  }
+
+  // ── Strategy 2: Window.__INITIAL_STATE__ or similar ──
+  const scripts = [...doc.querySelectorAll('script:not([src])')];
+  for (const s of scripts) {
+    const t = s.textContent;
+    if (t.includes('"forwards"') || t.includes('"defense"') || t.includes('"lines"')) {
+      const match = t.match(/\{.*"(forwards|defense|lines)".*\}/s);
+      if (match) {
+        try { return parseStructuredLines(JSON.parse(match[0])); } catch {}
+      }
+    }
+  }
+
+  // ── Strategy 3: Player links ──
+  const playerLinks = [...doc.querySelectorAll('a[href*="/players/"]')]
+    .map(a => a.textContent.trim())
+    .filter(n => n.length > 2 && n.length < 50 && /^[A-Z]/.test(n));
+  const unique = [...new Set(playerLinks)];
+  if (unique.length >= 6) {
+    result.forwards = chunk(unique.slice(0, 12), 3).map(row => [
+      { pos:'LW', name:row[0]||'' }, { pos:'C', name:row[1]||'' }, { pos:'RW', name:row[2]||'' }
+    ]);
+    result.defense = chunk(unique.slice(12, 18), 2).map(row => [
+      { pos:'LD', name:row[0]||'' }, { pos:'RD', name:row[1]||'' }
+    ]);
+    result.goalies = unique.slice(18, 20).map((n,i) => ({ pos: i===0?'G1':'G2', name: n }));
+    if (result.forwards.length) return result;
+  }
+
+  // ── Strategy 4: Table cells / named elements ──
+  const cells = [...doc.querySelectorAll('td,[class*="player-name"],[class*="PlayerName"],[class*="player_name"]')]
+    .map(el => el.textContent.trim())
+    .filter(t => t.length > 2 && t.length < 50 && /^[A-Z][a-z]/.test(t));
+  const ucells = [...new Set(cells)];
+  if (ucells.length >= 6) {
+    result.forwards = chunk(ucells.slice(0, 12), 3).map(row => [
+      { pos:'LW', name:row[0]||'' }, { pos:'C', name:row[1]||'' }, { pos:'RW', name:row[2]||'' }
+    ]);
+    result.defense  = chunk(ucells.slice(12, 18), 2).map(row => [
+      { pos:'LD', name:row[0]||'' }, { pos:'RD', name:row[1]||'' }
+    ]);
+    result.goalies  = ucells.slice(18, 20).map((n,i) => ({ pos: i===0?'G1':'G2', name: n }));
+    if (result.forwards.length) return result;
+  }
+
+  return null;
+}
+
+function parseStructuredLines(raw) {
+  const result = { forwards: [], defense: [], goalies: [] };
+  const fwds = raw.forwards || raw.forward_lines || raw.forwardLines || [];
+  const defs = raw.defense  || raw.defense_pairs  || raw.defensePairs || [];
+  const gols = raw.goalies  || raw.goaltenders    || [];
+
+  result.forwards = fwds.map(line => {
+    if (Array.isArray(line)) {
+      return line.map((p,i) => ({ pos: ['LW','C','RW'][i]||'F', name: pName(p) }));
+    }
+    return [
+      { pos:'LW', name: pName(line.lw || line.leftWing) },
+      { pos:'C',  name: pName(line.c  || line.center) },
+      { pos:'RW', name: pName(line.rw || line.rightWing) },
+    ];
+  });
+  result.defense = defs.map(pair => {
+    if (Array.isArray(pair)) {
+      return pair.map((p,i) => ({ pos: ['LD','RD'][i]||'D', name: pName(p) }));
+    }
+    return [
+      { pos:'LD', name: pName(pair.ld || pair.leftDefense) },
+      { pos:'RD', name: pName(pair.rd || pair.rightDefense) },
+    ];
+  });
+  result.goalies = (Array.isArray(gols) ? gols : [gols]).slice(0,2).map((g,i) => ({
+    pos: i===0?'Starter':'Backup', name: pName(g)
+  }));
+  return result;
+}
+
+function pName(p) {
+  if (!p) return '';
+  if (typeof p === 'string') return p;
+  return p.name || p.fullName || p.playerName ||
+         [p.firstName, p.lastName].filter(Boolean).join(' ') || '';
+}
+
+function chunk(arr, n) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i+n));
+  return out;
+}
+
+// ── Render lineup inside modal body ──
+function renderLineupSection(lines, label, rowClass, playerName) {
+  if (!lines || !lines.length) return '';
+  const rows = lines.map(line => {
+    const cells = line.map(p => {
+      const isMatch = playerName && p.name &&
+        p.name.toLowerCase().includes(playerName.split(' ').pop()?.toLowerCase() || '');
+      return `<div class="lineup-cell">
+        <span class="lineup-pos">${esc(p.pos)}</span>
+        <span class="lineup-pname${isMatch ? ' highlight' : ''}">${esc(p.name) || '—'}</span>
+      </div>`;
+    }).join('');
+    return `<div class="lineup-row ${rowClass}">${cells}</div>`;
+  }).join('');
+  return `
+    <div class="lineup-section">
+      <div class="lineup-section-title">${label}</div>
+      <div class="lineup-grid">${rows}</div>
+    </div>`;
+}
+
+// ── Open modal ──
+async function openLineup(abbrev, trade) {
+  const team = TEAMS[abbrev];
+  if (!team) return;
+
+  const dfUrl = `https://www.dailyfaceoff.com/teams/${team.slug}/line-combinations`;
+
+  document.getElementById('ml-logo').src = getLogoUrl(abbrev);
+  document.getElementById('ml-logo').alt = abbrev;
+  document.getElementById('ml-logo').style.display = '';
+  document.getElementById('ml-name').textContent = team.name;
+  document.getElementById('ml-sub').textContent  = 'Current line combinations · via Daily Faceoff';
+  document.getElementById('ml-dfo-link').href    = dfUrl;
+
+  document.getElementById('lineup-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const body = document.getElementById('modal-body');
+
+  // Traded player impact
+  const playerName = trade.playerName || '';
+  const isIncoming = abbrev === trade.toTeam;
+  const isRealPlayer = playerName && !isDraftCapital(playerName);
+
+  let impactHtml = '';
+  if (isRealPlayer) {
+    const role = isIncoming
+      ? `<span class="impact-pill incoming">↓ Arriving</span>`
+      : `<span class="impact-pill outgoing">↑ Departing</span>`;
+    impactHtml = `
+      <div class="impact-row">
+        ${role}
+        <span class="impact-player">${esc(playerName)}</span>
+      </div>
+      <p class="impact-note">Lineup reflects this player${isIncoming ? ' joining' : ' leaving'} the team.</p>`;
+  }
+
+  body.innerHTML = `
+    ${impactHtml}
+    <div class="lineup-loading"><span class="spinner-sm"></span>Loading lineup from Daily Faceoff…</div>`;
+
+  const lineup = await fetchDFLineup(team.slug);
+
+  if (lineup && (lineup.forwards?.length || lineup.defense?.length)) {
+    const searchName = isRealPlayer ? playerName : '';
+    body.innerHTML = `
+      ${impactHtml}
+      ${renderLineupSection(lineup.forwards, 'Forward Lines',    'fwd',  searchName)}
+      ${renderLineupSection(lineup.defense,  'Defense Pairs',    'def',  searchName)}
+      ${renderLineupSection(lineup.goalies?.map(g => [g]),
+                            'Goalies', 'goal', searchName)}`;
+  } else {
+    body.innerHTML = `
+      ${impactHtml}
+      <div class="lineup-unavail">
+        <div style="font-size:1.6rem;margin-bottom:10px">📋</div>
+        Lineup data couldn't be loaded in-page — click the button below to view the full current lines on Daily Faceoff.
+      </div>`;
+  }
+}
+
+function closeLineup() {
+  document.getElementById('lineup-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLineup(); });
 
 // ══════════════════════════════════════════════
 //  POLL
@@ -844,26 +1172,19 @@ async function poll() {
   setStatus('loading');
 
   try {
-    // Always fetch at least 7 days so "Today" shows current trades on first load
-    const daysToFetch = Math.min(Math.max(currentDays, 7), MAX_DAYS);
-    const fresh = await fetchTrades(daysToFetch);
+    const days  = Math.min(Math.max(currentDays, 7), MAX_DAYS);
+    const fresh = await fetchTrades(days);
 
-    // Detect new trades since last poll
-    const newTrades = [];
+    // Detect new trades
+    const newOnes = [];
     for (const t of fresh) {
       if (!seenIds.has(t.id)) {
-        t._new = true;
-        newTrades.push(t);
-        seenIds.add(t.id);
+        t._new = true; newOnes.push(t); seenIds.add(t.id);
       }
     }
+    try { localStorage.setItem('nhltt_seen', JSON.stringify([...seenIds].slice(-2000))); } catch {}
 
-    // Persist seen IDs (cap at 2000)
-    const arr = [...seenIds].slice(-2000);
-    try { localStorage.setItem('nhltt_seen', JSON.stringify(arr)); } catch {}
-
-    // Send notifications
-    for (const t of newTrades) notify(t);
+    for (const t of newOnes) sendNotif(t);
 
     allTrades = fresh;
     renderTrades();
@@ -872,25 +1193,22 @@ async function poll() {
     const now = timeNow();
     document.getElementById('stat-refresh').textContent = now;
     document.getElementById('footer-text').textContent =
-      `Data via ${dataSource} API · Last updated ${now} · Refreshes every 2 min`;
+      `Data via ${dataSource} API · last updated ${now} · refreshes every 2 min`;
 
-    // Flash page title for new trades
-    if (newTrades.length > 0) {
-      document.title = `(${newTrades.length} new) 🏒 NHL Trade Tracker`;
+    if (newOnes.length > 0) {
+      document.title = `(${newOnes.length} new) 🏒 NHL Trade Tracker`;
       setTimeout(() => { document.title = '🏒 NHL Trade Tracker'; }, 12000);
     }
 
   } catch (err) {
-    console.error('[NHL Tracker] Poll error:', err);
+    console.error('[NHL Tracker]', err);
     setStatus('error');
-
-    if (allTrades.length === 0) {
+    if (!allTrades.length) {
       document.getElementById('trades-area').innerHTML = `
         <div class="state-box">
           <div class="icon">⚠️</div>
           <h3>Couldn't reach the NHL API</h3>
-          <p>Check your internet connection. The tracker will retry automatically in 2 minutes.<br>
-          <small style="margin-top:8px;display:block;color:#3d5070">${err.message || ''}</small></p>
+          <p>Check your internet connection. The tracker will retry in 2 minutes.</p>
         </div>`;
     }
   } finally {
@@ -899,19 +1217,10 @@ async function poll() {
   }
 }
 
-function manualRefresh() {
-  clearTimeout(pollTimer);
-  poll();
-}
+function manualRefresh() { clearTimeout(pollTimer); poll(); }
 
-// ══════════════════════════════════════════════
-//  VISIBILITY  —  refresh immediately on return
-// ══════════════════════════════════════════════
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    clearTimeout(pollTimer);
-    poll();
-  }
+  if (!document.hidden) { clearTimeout(pollTimer); poll(); }
 });
 
 // ══════════════════════════════════════════════
