@@ -190,6 +190,18 @@ header {
   font-size: .93rem; line-height: 1.55; color: var(--text);
 }
 
+/* ── ASSETS (every player + pick involved) ── */
+.trade-assets {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0 18px 14px;
+}
+.asset-chip {
+  font-size: .72rem; font-weight: 600; white-space: nowrap;
+  border-radius: 12px; padding: 4px 10px; border: 1px solid var(--border2);
+}
+.asset-chip.player { background: var(--surface3); color: var(--text); }
+.asset-chip.pick   { background: var(--gold-dim); color: var(--gold); border-color: rgba(245,158,11,.3); }
+
 /* ── SPLIT TWO-SIDED TEAM PANEL ── */
 .trade-teams {
   border-top: 1px solid var(--border);
@@ -794,10 +806,50 @@ async function fetchESPN(days) {
 // ══════════════════════════════════════════════
 const TRADE_CODES = new Set(['TRADE', 'ET', 'TR', 'PL']);
 
+// Transactions that are NOT trades (used to veto weak signals).
+const NON_TRADE_RE = /\b(signed|re-signed|re-sign|resigned|recall|reassign|assigned|loaned|on loan|waiver|claimed off|activated|placed on|injured reserve|bought out|buyout|released|terminated|retired|extension|entry-level|elected free|qualifying offer|reinstated|suspended|minors|the ahl|to ahl|junior|conditioning|training camp)\b/i;
+
+// Inclusive trade detection across many phrasings; vetoes obvious non-trades.
+function looksLikeTrade(typeCode, desc) {
+  const t = (desc || '').toLowerCase();
+  if (TRADE_CODES.has(typeCode)) return true;
+  // Strong, unambiguous trade language — always counts.
+  if (/\btraded\b|\btrades\b|\btrading\b|\btrade with\b|\bin exchange\b|\bexchange for\b|\bdealt\b|\bswap/.test(t)) return true;
+  // Weaker signals only when it isn't clearly a signing/waiver/assignment/demotion.
+  if (NON_TRADE_RE.test(t)) return false;
+  if (/\bacquir(e|ed|es|ing)\b|\btrade\b/.test(t)) return true;
+  return /\bsen[dt]s?\b/.test(t) && /\bto\b/.test(t);   // "sent X to [team]"
+}
+
 function isDraftCapital(text) {
   const t = text.toLowerCase();
-  return t.includes('draft pick') || t.includes('round pick') ||
-         t.includes('conditional') || /\d+st|\d+nd|\d+rd|\d+th/.test(t);
+  return t.includes('draft pick') || t.includes('round pick') || t.includes('pick') ||
+         t.includes('conditional') || /\d+(st|nd|rd|th)/.test(t);
+}
+
+// Pull every asset (players + picks) out of a trade description.
+function extractAssets(desc) {
+  if (!desc) return [];
+  const assets = [], seen = new Set();
+  const push = (type, label) => {
+    const key = type + ':' + label.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); assets.push({ type, label }); }
+  };
+  // Players: a position code (C/F/D/G/LW/RW/LD/RD) followed by a 2–3 word name.
+  // Allow internal capitals (McAvoy, MacKinnon, DeBrincat) and apostrophes (O'Reilly).
+  const playerRe = /\b(?:C|F|D|G|LW|RW|LD|RD)\s+([A-ZÀ-Þ][A-Za-zÀ-ÿ'’-]+(?:\s+[A-ZÀ-Þ][A-Za-zÀ-ÿ'’-]+){1,2})/g;
+  let m;
+  while ((m = playerRe.exec(desc))) push('player', m[1].replace(/[.,;]+$/, '').trim());
+  // Draft picks: "<year> <ordinal>-round pick"
+  const pickRe = /\b(\d{4})\s+(first|second|third|fourth|fifth|sixth|seventh|\d+(?:st|nd|rd|th))[\s-]*round\s+(?:draft\s+)?pick/gi;
+  while ((m = pickRe.exec(desc))) {
+    const ord = m[2].replace(/^first$/i,'1st').replace(/^second$/i,'2nd').replace(/^third$/i,'3rd')
+                    .replace(/^fourth$/i,'4th').replace(/^fifth$/i,'5th').replace(/^sixth$/i,'6th').replace(/^seventh$/i,'7th');
+    push('pick', `${m[1]} ${ord} round pick`);
+  }
+  if (/conditional/i.test(desc)) push('pick', 'conditional pick');
+  if (/future considerations?/i.test(desc)) push('pick', 'future considerations');
+  return assets;
 }
 
 function buildRedditLink(trade) {
@@ -810,11 +862,7 @@ function buildRedditLink(trade) {
 // ── NHL normaliser ──
 function normaliseNHL(tx) {
   const typeCode = String(tx.typeCode || tx.type || '').toUpperCase().trim();
-  const desc     = String(tx.description || '').toLowerCase();
-  const isTrade  =
-    TRADE_CODES.has(typeCode) ||
-    desc.includes('traded') || desc.includes('acquired') || desc.includes('in exchange');
-  if (!isTrade) return null;
+  if (!looksLikeTrade(typeCode, tx.description)) return null;
 
   let rawDate = tx.tradedOn || tx.transactionDate || tx.date || '';
   if (rawDate.length === 8)
@@ -843,7 +891,7 @@ function normaliseNHL(tx) {
   const trade = {
     id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
     date: rawDate, description, fromTeam: fromAbbr, toTeam: toAbbr,
-    playerName, source: 'NHL',
+    playerName, assets: extractAssets(description), source: 'NHL',
   };
   trade.redditUrl = buildRedditLink(trade);
   trade.sourceUrl = buildSourceLink(trade);
@@ -853,11 +901,8 @@ function normaliseNHL(tx) {
 // ── ESPN normaliser ──
 function normaliseESPN(tx) {
   const typeText = (tx.type?.text || '').toLowerCase();
-  const desc     = (tx.description || tx.headline || '').toLowerCase();
-  const isTrade  =
-    typeText.includes('trade') || desc.includes('traded') ||
-    desc.includes('acquired') || desc.includes('in exchange');
-  if (!isTrade) return null;
+  const descText = tx.description || tx.headline || '';
+  if (!typeText.includes('trade') && !looksLikeTrade('', descText)) return null;
 
   const rawDate = (tx.date || '').slice(0, 10);
   if (!rawDate) return null;
@@ -872,7 +917,7 @@ function normaliseESPN(tx) {
   const trade = {
     id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
     date: rawDate, description, fromTeam: fromAbbr, toTeam: toAbbr,
-    playerName, source: 'ESPN',
+    playerName, assets: extractAssets(description), source: 'ESPN',
   };
   trade.redditUrl = buildRedditLink(trade);
   trade.sourceUrl = buildSourceLink(trade);
@@ -1052,9 +1097,14 @@ function teamSide(abbrev, side, role) {
 }
 
 function tradeCard(t) {
-  const isNew      = t._new;
-  const showPlayer = t.playerName && !isDraftCapital(t.playerName);
-  const src        = t.sourceUrl || '';
+  const isNew  = t._new;
+  const src    = t.sourceUrl || '';
+  const assets = t.assets && t.assets.length ? t.assets : [];
+
+  const assetRow = assets.length ? `
+    <div class="trade-assets">
+      ${assets.map(a => `<span class="asset-chip ${a.type}">${a.type === 'player' ? '🏒' : '🎟️'} ${esc(a.label)}</span>`).join('')}
+    </div>` : '';
 
   return `
   <div class="trade-card${isNew ? ' is-new' : ''}" data-source="${esc(src)}"
@@ -1070,11 +1120,11 @@ function tradeCard(t) {
       </span>
     </div>
     <div class="trade-desc">${esc(t.description)}</div>
+    ${assetRow}
     <div class="trade-teams">
       ${teamSide(t.fromTeam, 'left',  'loses')}
       <div class="trade-mid">
         <span class="trade-arrow">→</span>
-        ${showPlayer ? `<span class="player-chip" title="${esc(t.playerName)}">${esc(t.playerName)}</span>` : ''}
       </div>
       ${teamSide(t.toTeam, 'right', 'acquires')}
     </div>
