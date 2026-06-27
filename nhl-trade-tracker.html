@@ -157,6 +157,7 @@ header {
   transition: background .18s;
 }
 .trade-card:hover { background: var(--surface2); }
+.trade-card[data-source]:not([data-source=""]) { cursor: pointer; }
 .trade-card.is-new { border-left-color: var(--green); animation: slideIn .35s ease-out; }
 
 @keyframes slideIn {
@@ -175,8 +176,9 @@ header {
 .badge-trade { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(245,158,11,.25); }
 .badge-new   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
 .trade-time  { font-size: .73rem; color: var(--text-muted); }
+.source-link-group { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .source-link {
-  margin-left: auto; font-size: .73rem; color: var(--accent);
+  font-size: .73rem; color: var(--accent);
   text-decoration: none; white-space: nowrap;
   border: 1px solid rgba(0,180,216,.2); border-radius: 4px; padding: 2px 8px;
   transition: all .18s;
@@ -563,6 +565,52 @@ function getLogoUrl(abbrev) {
   return `https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
 }
 
+// ESPN / alternate abbreviations → NHL standard 3-letter codes
+const ABBREV_ALIAS = {
+  TB:'TBL', SJ:'SJS', NJ:'NJD', LA:'LAK', CLB:'CBJ', CLS:'CBJ',
+  WAS:'WSH', MON:'MTL', VEG:'VGK', LV:'VGK', NAS:'NSH', CAL:'CGY',
+  ARI:'UTA', PHX:'UTA', ARZ:'UTA', WIN:'WPG', TBA:'TBL', SJA:'SJS',
+  NJA:'NJD', LAA:'LAK', FLO:'FLA', ANH:'ANA', BUFF:'BUF',
+};
+
+function normAbbrev(a) {
+  if (!a) return '';
+  const up = String(a).toUpperCase().trim();
+  if (TEAMS[up]) return up;
+  if (ABBREV_ALIAS[up]) return ABBREV_ALIAS[up];
+  return up;  // unknown — still shown as text, logo will fade if missing
+}
+
+// Scan free text for any team name/city/nickname; return {from, to} by order
+function teamsFromText(text) {
+  if (!text) return { from: '', to: '' };
+  const hits = [];
+  for (const [abbr, info] of Object.entries(TEAMS)) {
+    const parts = info.name.split(' ');
+    const nick  = parts[parts.length - 1];                 // "Oilers"
+    const city  = parts.slice(0, -1).join(' ');            // "Edmonton"
+    let idx = info.name && text.indexOf(info.name);
+    if (idx == null || idx < 0) idx = nick ? text.indexOf(nick) : -1;
+    if (idx < 0 && city.length > 3) idx = text.indexOf(city);
+    if (idx >= 0) hits.push({ abbr, idx });
+  }
+  hits.sort((a, b) => a.idx - b.idx);
+  const seen = new Set(), order = [];
+  for (const h of hits) if (!seen.has(h.abbr)) { seen.add(h.abbr); order.push(h.abbr); }
+  return { from: order[0] || '', to: order[1] || '' };
+}
+
+// Link the trade to actual reporting (Google News surfaces the source article)
+function buildSourceLink(trade) {
+  const terms = [
+    trade.playerName,
+    trade.fromTeam && getTeamName(trade.fromTeam),
+    trade.toTeam   && getTeamName(trade.toTeam),
+    'trade',
+  ].filter(Boolean).join(' ');
+  return `https://news.google.com/search?q=${encodeURIComponent(terms)}&hl=en-US`;
+}
+
 // ══════════════════════════════════════════════
 //  CONFIG & STATE
 // ══════════════════════════════════════════════
@@ -676,13 +724,21 @@ function normaliseNHL(tx) {
     playerName = `${tx.firstName} ${tx.lastName || ''}`.trim();
   }
 
-  const fromAbbr = tx.fromTeam?.abbrev || tx.fromTeam?.triCode || tx.fromTeam?.name || '';
-  const toAbbr   = tx.toTeam?.abbrev   || tx.toTeam?.triCode   || tx.toTeam?.name   || '';
+  let fromAbbr = normAbbrev(tx.fromTeam?.abbrev || tx.fromTeam?.triCode || tx.fromTeam?.name || '');
+  let toAbbr   = normAbbrev(tx.toTeam?.abbrev   || tx.toTeam?.triCode   || tx.toTeam?.name   || '');
+
   let description = tx.description || '';
   if (!description)
     description = playerName
-      ? `${playerName} traded${fromAbbr ? ' from ' + fromAbbr : ''}${toAbbr ? ' to ' + toAbbr : ''}`
-      : `Trade: ${fromAbbr || '?'} → ${toAbbr || '?'}`;
+      ? `${playerName} traded${fromAbbr ? ' from ' + getTeamName(fromAbbr) : ''}${toAbbr ? ' to ' + getTeamName(toAbbr) : ''}`
+      : `Trade: ${getTeamName(fromAbbr) || '?'} → ${getTeamName(toAbbr) || '?'}`;
+
+  // Fill missing teams by scanning the description text
+  if (!fromAbbr || !toAbbr) {
+    const found = teamsFromText(description);
+    fromAbbr = fromAbbr || found.from;
+    toAbbr   = toAbbr   || found.to;
+  }
 
   const trade = {
     id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
@@ -690,6 +746,7 @@ function normaliseNHL(tx) {
     playerName, source: 'NHL',
   };
   trade.redditUrl = buildRedditLink(trade);
+  trade.sourceUrl = buildSourceLink(trade);
   return trade;
 }
 
@@ -706,9 +763,15 @@ function normaliseESPN(tx) {
   if (!rawDate) return null;
 
   const description = tx.description || tx.headline || '';
-  const fromAbbr    = tx.fromTeam?.abbreviation || tx.fromTeam?.displayName || '';
-  const toAbbr      = tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '';
+  let   fromAbbr    = normAbbrev(tx.fromTeam?.abbreviation || tx.fromTeam?.displayName || '');
+  let   toAbbr      = normAbbrev(tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '');
   const playerName  = tx.athletes?.[0]?.displayName || tx.athlete?.displayName || '';
+
+  if (!fromAbbr || !toAbbr) {
+    const found = teamsFromText(description);
+    fromAbbr = fromAbbr || found.from;
+    toAbbr   = toAbbr   || found.to;
+  }
 
   const trade = {
     id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
@@ -716,6 +779,7 @@ function normaliseESPN(tx) {
     playerName, source: 'ESPN',
   };
   trade.redditUrl = buildRedditLink(trade);
+  trade.sourceUrl = buildSourceLink(trade);
   return trade;
 }
 
@@ -872,12 +936,12 @@ function teamBlock(abbrev, role, tradeRef) {
   const clickable = abbrev && TEAMS[abbrev];
 
   const onclick = clickable
-    ? `openLineup(${JSON.stringify(abbrev)},${JSON.stringify(tradeRef)})`
-    : '';
+    ? `event.stopPropagation();openLineup(${JSON.stringify(abbrev)},${JSON.stringify(tradeRef)})`
+    : 'event.stopPropagation()';
   const title = clickable ? `View ${name} lineup` : '';
 
   return `
-  <button class="team-btn" ${onclick ? `onclick="${onclick}"` : ''} ${title ? `title="${esc(title)}"` : ''} ${!clickable ? 'style="cursor:default"' : ''}>
+  <button class="team-btn" onclick="${onclick}" ${title ? `title="${esc(title)}"` : ''} ${!clickable ? 'style="cursor:default"' : ''}>
     ${logoUrl ? `<img class="team-logo" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.style.opacity='.3'">` : '<div style="width:48px"></div>'}
     <div class="team-text">
       <span class="team-abbr">${esc(abbrev)}</span>
@@ -892,14 +956,18 @@ function tradeCard(t) {
   const isNew     = t._new;
   const showPlayer = t.playerName && !isDraftCapital(t.playerName);
   const tradeRef  = { playerName: t.playerName, fromTeam: t.fromTeam, toTeam: t.toTeam };
+  const src       = t.sourceUrl || '';
 
   return `
-  <div class="trade-card${isNew ? ' is-new' : ''}">
+  <div class="trade-card${isNew ? ' is-new' : ''}" data-source="${esc(src)}" onclick="cardClick(event,this)" title="Click for the trade source &amp; news">
     <div class="trade-top">
       <span class="badge badge-trade">TRADE</span>
       ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
       <span class="trade-time">${relativeDate(t.date)}</span>
-      ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener">💬 Reddit discussion</a>` : ''}
+      <span class="source-link-group">
+        ${src ? `<a href="${esc(src)}" class="source-link" target="_blank" rel="noopener" onclick="event.stopPropagation()">📰 News</a>` : ''}
+        ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 Reddit</a>` : ''}
+      </span>
     </div>
     <div class="trade-desc">${esc(t.description)}</div>
     ${(t.fromTeam || t.toTeam) ? `
@@ -912,6 +980,12 @@ function tradeCard(t) {
       ${t.toTeam ? teamBlock(t.toTeam, 'acquires', tradeRef) : '<div></div>'}
     </div>` : ''}
   </div>`;
+}
+
+// Whole-card click → open the trade's source (ignored when a child handled it)
+function cardClick(e, el) {
+  const url = el.getAttribute('data-source');
+  if (url) window.open(url, '_blank', 'noopener');
 }
 
 function renderTrades() {
