@@ -190,67 +190,65 @@ header {
   font-size: .93rem; line-height: 1.55; color: var(--text);
 }
 
-/* ── TEAM BLOCKS ── */
+/* ── SPLIT TWO-SIDED TEAM PANEL ── */
 .trade-teams {
   border-top: 1px solid var(--border);
-  padding: 14px 18px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  align-items: center;
+  align-items: stretch;
+  position: relative;
 }
 
-.team-btn {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 14px;
-  cursor: pointer; text-align: left;
-  transition: all .2s; width: 100%;
+.team-side {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 7px; padding: 20px 14px 18px;
+  background: transparent; border: none; color: inherit;
+  cursor: pointer; text-align: center; width: 100%;
+  position: relative; overflow: hidden;
+  transition: background .2s;
 }
-.team-btn:hover {
-  border-color: var(--accent);
-  background: rgba(0,180,216,.06);
-  transform: translateY(-1px);
-}
-.team-btn:hover .team-role { color: var(--accent); }
-.team-btn[title]::after {
-  /* subtle "click for lineup" hint */
-  display: none;
-}
+.team-side.left  { background: linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,0) 70%); }
+.team-side.right { background: linear-gradient(225deg, rgba(255,255,255,.045), rgba(255,255,255,0) 70%); }
+.team-side.clickable:hover { background: rgba(0,180,216,.09); }
+.team-side.clickable:hover .ts-hint { color: var(--accent); }
+.team-side[data-action="none"] { cursor: default; }
 
-.team-logo {
-  width: 48px; height: 48px;
-  object-fit: contain; flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+.big-logo {
+  width: 86px; height: 86px; object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.55));
 }
-.team-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.team-abbr { font-size: .7rem; font-weight: 800; letter-spacing: 1px; color: var(--text-muted); }
-.team-full-name {
-  font-size: .88rem; font-weight: 700; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.big-logo-fallback {
+  width: 86px; height: 86px; display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem; opacity: .3;
 }
-.team-role {
-  font-size: .68rem; color: var(--text-muted); margin-top: 2px;
-  text-transform: uppercase; letter-spacing: .8px;
+.ts-name {
+  font-size: .9rem; font-weight: 700; color: var(--text); line-height: 1.25;
 }
-.team-role.acquires { color: var(--green); }
-.team-role.loses    { color: var(--red); }
-.lineup-hint {
-  font-size: .64rem; color: var(--text-muted);
-  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 4px;
+.ts-abbr { font-size: .66rem; font-weight: 800; letter-spacing: 1.5px; color: var(--text-muted); }
+.ts-role {
+  font-size: .64rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+  margin-top: 2px;
 }
+.ts-role.acquires { color: var(--green); }
+.ts-role.loses    { color: var(--red); }
+.ts-hint { font-size: .6rem; color: var(--text-muted); transition: color .2s; }
 
-.trade-center {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  flex-shrink: 0;
+/* center divider + arrow + player */
+.trade-mid {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 0 10px; z-index: 3;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--surface);
 }
-.trade-arrow { font-size: 1.4rem; color: var(--gold); }
+.trade-card:hover .trade-mid { background: var(--surface2); }
+.trade-arrow { font-size: 1.5rem; color: var(--gold); }
 .trade-card.is-new .trade-arrow { color: var(--green); }
 .player-chip {
   background: var(--surface3); border: 1px solid var(--border2);
-  border-radius: 12px; padding: 3px 10px;
-  font-size: .73rem; color: var(--text); white-space: nowrap;
-  max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+  border-radius: 12px; padding: 4px 11px;
+  font-size: .72rem; color: var(--text); white-space: nowrap;
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; text-align: center;
 }
 
 /* ── EMPTY / LOADING ── */
@@ -403,10 +401,13 @@ header {
   .stat-card:last-child { grid-column: span 2; }
   header { padding: 0 14px; }
   .container { padding: 14px 10px 40px; }
-  .trade-teams { grid-template-columns: 1fr; gap: 8px; }
-  .trade-center { flex-direction: row; }
-  .trade-arrow { transform: rotate(90deg); }
-  .team-btn { justify-content: center; }
+  /* keep both teams side-by-side on mobile, just tighten the center */
+  .trade-teams { grid-template-columns: 1fr auto 1fr; }
+  .team-side { padding: 16px 8px 14px; gap: 5px; }
+  .big-logo, .big-logo-fallback { width: 60px; height: 60px; }
+  .ts-name { font-size: .76rem; }
+  .ts-hint { display: none; }
+  .trade-mid { padding: 0 4px; }
   .modal-head { gap: 12px; padding: 16px; }
   .modal-body { padding: 14px 16px; }
   .modal-foot { padding: 14px 16px; }
@@ -581,23 +582,37 @@ function normAbbrev(a) {
   return up;  // unknown — still shown as text, logo will fade if missing
 }
 
-// Scan free text for any team name/city/nickname; return {from, to} by order
-function teamsFromText(text) {
-  if (!text) return { from: '', to: '' };
+// Scan free text for every team mentioned, in order of first appearance.
+// Also matches bare 3-letter abbreviations so single-team rows still resolve.
+function teamsListFromText(text) {
+  if (!text) return [];
   const hits = [];
   for (const [abbr, info] of Object.entries(TEAMS)) {
     const parts = info.name.split(' ');
-    const nick  = parts[parts.length - 1];                 // "Oilers"
-    const city  = parts.slice(0, -1).join(' ');            // "Edmonton"
-    let idx = info.name && text.indexOf(info.name);
-    if (idx == null || idx < 0) idx = nick ? text.indexOf(nick) : -1;
+    const nick  = parts[parts.length - 1];          // "Oilers"
+    const city  = parts.slice(0, -1).join(' ');     // "Edmonton"
+    let idx = text.indexOf(info.name);
+    if (idx < 0 && nick) idx = text.indexOf(nick);
     if (idx < 0 && city.length > 3) idx = text.indexOf(city);
+    if (idx < 0) {                                   // bare abbreviation, word-bounded
+      const m = new RegExp(`\\b${abbr}\\b`).exec(text);
+      if (m) idx = m.index;
+    }
     if (idx >= 0) hits.push({ abbr, idx });
   }
   hits.sort((a, b) => a.idx - b.idx);
   const seen = new Set(), order = [];
   for (const h of hits) if (!seen.has(h.abbr)) { seen.add(h.abbr); order.push(h.abbr); }
-  return { from: order[0] || '', to: order[1] || '' };
+  return order;
+}
+
+// Fill any missing from/to side from the description, never duplicating a known team.
+function fillTeams(fromAbbr, toAbbr, text) {
+  if (fromAbbr && toAbbr) return { fromAbbr, toAbbr };
+  const pool = teamsListFromText(text).filter(a => a !== fromAbbr && a !== toAbbr);
+  if (!fromAbbr) fromAbbr = pool.shift() || '';
+  if (!toAbbr)   toAbbr   = pool.shift() || '';
+  return { fromAbbr, toAbbr };
 }
 
 // Link the trade to actual reporting (Google News surfaces the source article)
@@ -734,11 +749,7 @@ function normaliseNHL(tx) {
       : `Trade: ${getTeamName(fromAbbr) || '?'} → ${getTeamName(toAbbr) || '?'}`;
 
   // Fill missing teams by scanning the description text
-  if (!fromAbbr || !toAbbr) {
-    const found = teamsFromText(description);
-    fromAbbr = fromAbbr || found.from;
-    toAbbr   = toAbbr   || found.to;
-  }
+  ({ fromAbbr, toAbbr } = fillTeams(fromAbbr, toAbbr, description));
 
   const trade = {
     id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
@@ -767,11 +778,7 @@ function normaliseESPN(tx) {
   let   toAbbr      = normAbbrev(tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '');
   const playerName  = tx.athletes?.[0]?.displayName || tx.athlete?.displayName || '';
 
-  if (!fromAbbr || !toAbbr) {
-    const found = teamsFromText(description);
-    fromAbbr = fromAbbr || found.from;
-    toAbbr   = toAbbr   || found.to;
-  }
+  ({ fromAbbr, toAbbr } = fillTeams(fromAbbr, toAbbr, description));
 
   const trade = {
     id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
@@ -928,64 +935,86 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function teamBlock(abbrev, role, tradeRef) {
-  const name    = getTeamName(abbrev);
-  const logoUrl = abbrev ? getLogoUrl(abbrev) : '';
+// One side of the split card. Uses data-attributes only (no inline JS) so
+// nothing can break HTML attribute quoting — clicks are handled by delegation.
+function teamSide(abbrev, side, role) {
+  const name      = getTeamName(abbrev) || 'Unknown team';
+  const known     = abbrev && TEAMS[abbrev];
+  const logoUrl   = known ? getLogoUrl(abbrev) : '';
   const roleClass = role === 'acquires' ? 'acquires' : 'loses';
-  const roleLabel = role === 'acquires' ? 'Acquires' : 'Trades away';
-  const clickable = abbrev && TEAMS[abbrev];
+  const roleLabel = role === 'acquires' ? '▼ Acquires' : '▲ Trades away';
 
-  const onclick = clickable
-    ? `event.stopPropagation();openLineup(${JSON.stringify(abbrev)},${JSON.stringify(tradeRef)})`
-    : 'event.stopPropagation()';
-  const title = clickable ? `View ${name} lineup` : '';
+  const logo = logoUrl
+    ? `<img class="big-logo" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.outerHTML='<div class=\\'big-logo-fallback\\'>🏒</div>'">`
+    : `<div class="big-logo-fallback">🏒</div>`;
 
   return `
-  <button class="team-btn" onclick="${onclick}" ${title ? `title="${esc(title)}"` : ''} ${!clickable ? 'style="cursor:default"' : ''}>
-    ${logoUrl ? `<img class="team-logo" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.style.opacity='.3'">` : '<div style="width:48px"></div>'}
-    <div class="team-text">
-      <span class="team-abbr">${esc(abbrev)}</span>
-      <span class="team-full-name">${esc(name)}</span>
-      <span class="team-role ${roleClass}">${roleLabel}</span>
-      ${clickable ? '<span class="lineup-hint">Click for lineup ↗</span>' : ''}
-    </div>
+  <button class="team-side ${side}${known ? ' clickable' : ''}"
+          data-action="${known ? 'lineup' : 'none'}" data-abbrev="${esc(abbrev || '')}">
+    ${logo}
+    ${abbrev ? `<span class="ts-abbr">${esc(abbrev)}</span>` : ''}
+    <span class="ts-name">${esc(name)}</span>
+    <span class="ts-role ${roleClass}">${roleLabel}</span>
+    ${known ? '<span class="ts-hint">Click for lineup ↗</span>' : ''}
   </button>`;
 }
 
 function tradeCard(t) {
-  const isNew     = t._new;
+  const isNew      = t._new;
   const showPlayer = t.playerName && !isDraftCapital(t.playerName);
-  const tradeRef  = { playerName: t.playerName, fromTeam: t.fromTeam, toTeam: t.toTeam };
-  const src       = t.sourceUrl || '';
+  const src        = t.sourceUrl || '';
 
   return `
-  <div class="trade-card${isNew ? ' is-new' : ''}" data-source="${esc(src)}" onclick="cardClick(event,this)" title="Click for the trade source &amp; news">
+  <div class="trade-card${isNew ? ' is-new' : ''}" data-source="${esc(src)}"
+       data-player="${esc(t.playerName || '')}" data-from="${esc(t.fromTeam || '')}" data-to="${esc(t.toTeam || '')}"
+       title="Click for the trade source &amp; news">
     <div class="trade-top">
       <span class="badge badge-trade">TRADE</span>
       ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
       <span class="trade-time">${relativeDate(t.date)}</span>
       <span class="source-link-group">
-        ${src ? `<a href="${esc(src)}" class="source-link" target="_blank" rel="noopener" onclick="event.stopPropagation()">📰 News</a>` : ''}
-        ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 Reddit</a>` : ''}
+        ${src ? `<a href="${esc(src)}" class="source-link" target="_blank" rel="noopener">📰 News</a>` : ''}
+        ${t.redditUrl ? `<a href="${esc(t.redditUrl)}" class="source-link" target="_blank" rel="noopener">💬 Reddit</a>` : ''}
       </span>
     </div>
     <div class="trade-desc">${esc(t.description)}</div>
-    ${(t.fromTeam || t.toTeam) ? `
     <div class="trade-teams">
-      ${t.fromTeam ? teamBlock(t.fromTeam, 'loses',    tradeRef) : '<div></div>'}
-      <div class="trade-center">
+      ${teamSide(t.fromTeam, 'left',  'loses')}
+      <div class="trade-mid">
         <span class="trade-arrow">→</span>
         ${showPlayer ? `<span class="player-chip" title="${esc(t.playerName)}">${esc(t.playerName)}</span>` : ''}
       </div>
-      ${t.toTeam ? teamBlock(t.toTeam, 'acquires', tradeRef) : '<div></div>'}
-    </div>` : ''}
+      ${teamSide(t.toTeam, 'right', 'acquires')}
+    </div>
   </div>`;
 }
 
-// Whole-card click → open the trade's source (ignored when a child handled it)
-function cardClick(e, el) {
-  const url = el.getAttribute('data-source');
-  if (url) window.open(url, '_blank', 'noopener');
+// ── Single delegated click handler for the whole trade feed ──
+// Robust against re-rendered innerHTML; avoids per-element inline handlers.
+function initTradeDelegation() {
+  const area = document.getElementById('trades-area');
+  area.addEventListener('click', e => {
+    // Real anchor links (News / Reddit) navigate on their own — don't hijack.
+    if (e.target.closest('a')) return;
+
+    // Team logo → open that team's lineup.
+    const sideBtn = e.target.closest('[data-action="lineup"]');
+    if (sideBtn) {
+      const card = sideBtn.closest('.trade-card');
+      openLineup(sideBtn.dataset.abbrev, {
+        playerName: card?.dataset.player || '',
+        fromTeam:   card?.dataset.from   || '',
+        toTeam:     card?.dataset.to     || '',
+      });
+      return;
+    }
+
+    // Anywhere else on the card → open the trade source.
+    const card = e.target.closest('.trade-card');
+    if (card && card.dataset.source) {
+      window.open(card.dataset.source, '_blank', 'noopener');
+    }
+  });
 }
 
 function renderTrades() {
@@ -1300,6 +1329,7 @@ document.addEventListener('visibilitychange', () => {
 // ══════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════
+initTradeDelegation();
 updateNotifBanner();
 poll();
 </script>
