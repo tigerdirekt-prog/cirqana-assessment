@@ -648,12 +648,59 @@ function teamsListFromText(text) {
   return hits.map(h => h.abbr);
 }
 
-// Fill any missing from/to side from the description, never duplicating a known team.
-function fillTeams(fromAbbr, toAbbr, text) {
+// Deep-scan an entire transaction object for every team it references
+// (structured fields AND text), in encounter order. This surfaces the
+// "owning"/perspective team that one-sided descriptions leave unnamed.
+function deepScanTeams(obj, depth = 0, out = [], seen = new Set()) {
+  if (depth > 5 || obj == null) return out;
+  if (typeof obj === 'string') {
+    const n = normAbbrev(obj);
+    if (TEAMS[n]) { if (!seen.has(n)) { seen.add(n); out.push(n); } }
+    else for (const a of teamsListFromText(obj)) if (!seen.has(a)) { seen.add(a); out.push(a); }
+  } else if (typeof obj === 'object') {
+    for (const k in obj) deepScanTeams(obj[k], depth + 1, out, seen);
+  }
+  return out;
+}
+
+// Which way does the deal flow, from the verb? true = owner acquires, false = owner sends.
+// Prefix matches (no trailing \b) so all tenses hit: trade/trades/traded/trading.
+function ownerAcquires(text) {
+  const t = (text || '').toLowerCase();
+  if (/\bacquir|\bclaim|\breceiv|\badds?\b|\bsigns?\b|\blands?\b/.test(t)) return true;
+  if ((/\btrad|\bsen[dt]|\bdeal|\bship|\bmoves?\b/.test(t)) && /\bto\b/.test(t)) return false;
+  return null;
+}
+
+// Always resolve a from/to pair. Priority: structured fields → description
+// direction + counterparty → owning team from the object.
+function resolveTeams(tx, description, structFrom, structTo) {
+  let fromAbbr = structFrom || '';
+  let toAbbr   = structTo   || '';
   if (fromAbbr && toAbbr) return { fromAbbr, toAbbr };
-  const pool = teamsListFromText(text).filter(a => a !== fromAbbr && a !== toAbbr);
-  if (!fromAbbr) fromAbbr = pool.shift() || '';
-  if (!toAbbr)   toAbbr   = pool.shift() || '';
+
+  const textTeams = teamsListFromText(description);          // teams named in the snippet
+  const allTeams  = deepScanTeams(tx);                       // every team anywhere in the row
+  const dir       = ownerAcquires(description);
+
+  if (textTeams.length >= 2) {
+    // Both teams named in the text — order them by the verb.
+    const subject = textTeams[0], object = textTeams[1];
+    if (dir === false) { fromAbbr ||= subject; toAbbr ||= object; }   // "A traded X to B"
+    else               { fromAbbr ||= object; toAbbr ||= subject; }   // "A acquired X from B"
+  } else if (textTeams.length === 1) {
+    const counter = textTeams[0];
+    const owner   = allTeams.find(a => a !== counter) || '';
+    if (dir === false) { fromAbbr ||= owner;   toAbbr ||= counter; }  // owner sends to counter
+    else               { fromAbbr ||= counter; toAbbr ||= owner;   }  // owner acquires from counter
+  }
+
+  // Final safety net: fill any still-empty side from anything we found, no dupes.
+  if (!fromAbbr || !toAbbr) {
+    const pool = [...new Set([...textTeams, ...allTeams])].filter(a => a !== fromAbbr && a !== toAbbr);
+    if (!fromAbbr) fromAbbr = pool.shift() || '';
+    if (!toAbbr)   toAbbr   = pool.shift() || '';
+  }
   return { fromAbbr, toAbbr };
 }
 
@@ -790,8 +837,8 @@ function normaliseNHL(tx) {
       ? `${playerName} traded${fromAbbr ? ' from ' + getTeamName(fromAbbr) : ''}${toAbbr ? ' to ' + getTeamName(toAbbr) : ''}`
       : `Trade: ${getTeamName(fromAbbr) || '?'} → ${getTeamName(toAbbr) || '?'}`;
 
-  // Fill missing teams by scanning the description text
-  ({ fromAbbr, toAbbr } = fillTeams(fromAbbr, toAbbr, description));
+  // Always resolve to two teams: structured → description direction → owning team
+  ({ fromAbbr, toAbbr } = resolveTeams(tx, description, fromAbbr, toAbbr));
 
   const trade = {
     id: `nhl_${tx.id || tx.transactionId || Math.random().toString(36).slice(2)}`,
@@ -820,7 +867,7 @@ function normaliseESPN(tx) {
   let   toAbbr      = normAbbrev(tx.toTeam?.abbreviation   || tx.toTeam?.displayName   || '');
   const playerName  = tx.athletes?.[0]?.displayName || tx.athlete?.displayName || '';
 
-  ({ fromAbbr, toAbbr } = fillTeams(fromAbbr, toAbbr, description));
+  ({ fromAbbr, toAbbr } = resolveTeams(tx, description, fromAbbr, toAbbr));
 
   const trade = {
     id: `espn_${tx.id || Math.random().toString(36).slice(2)}`,
@@ -980,7 +1027,7 @@ function esc(s) {
 // One side of the split card. The team logo fills the whole half edge-to-edge
 // as a background; a dedicated "View Lineup" button opens the lineup modal.
 function teamSide(abbrev, side, role) {
-  const name      = getTeamName(abbrev) || 'Unknown team';
+  const name      = getTeamName(abbrev) || 'Other NHL team';
   const known     = abbrev && TEAMS[abbrev];
   const logoUrl   = known ? getLogoUrl(abbrev) : '';
   const roleClass = role === 'acquires' ? 'acquires' : 'loses';
