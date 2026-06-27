@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏒 NHL Trade Tracker</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080c18;
+  --surface: #0f1624;
+  --surface2: #172035;
+  --border: #1e2d4a;
+  --accent: #00b4d8;
+  --accent-dim: rgba(0,180,216,0.12);
+  --gold: #f59e0b;
+  --gold-dim: rgba(245,158,11,0.12);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.12);
+  --red: #ef4444;
+  --text: #dde3ef;
+  --text-muted: #5a6f8f;
+  --radius: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.4;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-puck { font-size: 1.4rem; }
+
+.logo-text em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-dim);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--green);
+}
+
+.live-badge.error {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.25);
+  color: var(--red);
+}
+
+.live-badge.loading {
+  background: var(--gold-dim);
+  border-color: rgba(245,158,11,0.25);
+  color: var(--gold);
+}
+
+.pulse {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+.live-badge.error .pulse,
+.live-badge.loading .pulse {
+  animation: none;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.8); }
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ─── NOTIFICATION BANNER ─── */
+#notif-banner {
+  background: linear-gradient(90deg, #0e1e3a, #111d38);
+  border-bottom: 1px solid var(--accent);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.85rem;
+}
+
+#notif-banner.hidden { display: none; }
+#notif-banner .nb-icon { font-size: 1.3rem; flex-shrink: 0; }
+#notif-banner .nb-text { color: var(--text-muted); flex: 1; }
+#notif-banner .nb-text strong { color: var(--text); }
+
+.notif-btn {
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+.notif-btn:hover { opacity: 0.85; }
+.notif-btn:disabled { opacity: 0.5; cursor: default; }
+.notif-btn.granted { background: var(--green); }
+
+/* ─── MAIN LAYOUT ─── */
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* ─── STATS ROW ─── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── FILTERS ─── */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 700;
+}
+
+/* ─── SECTION HEADER ─── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.section-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+/* ─── TRADE CARDS ─── */
+.trades-list { display: flex; flex-direction: column; gap: 10px; }
+
+.trade-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: default;
+  transition: background 0.18s, transform 0.18s;
+}
+.trade-card:hover {
+  background: var(--surface2);
+}
+.trade-card.is-new {
+  border-left-color: var(--green);
+  animation: slideIn 0.35s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.trade-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.badge-trade {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid rgba(245,158,11,0.25);
+}
+
+.badge-new {
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.3);
+}
+
+.trade-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.trade-desc {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.trade-teams {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.team-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.arrow { color: var(--gold); font-size: 1rem; }
+.is-new .arrow { color: var(--green); }
+
+.trade-player {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ─── EMPTY / LOADING STATES ─── */
+.state-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.state-box .icon { font-size: 2.8rem; margin-bottom: 16px; }
+.state-box h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 8px; }
+.state-box p { font-size: 0.85rem; line-height: 1.6; max-width: 380px; margin: 0 auto; }
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── FOOTER ─── */
+.footer {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ─── SOURCE BADGE ─── */
+.source-label {
+  display: inline-block;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 580px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stat-card:last-child { grid-column: span 2; }
+  header { padding: 0 16px; }
+  #notif-banner { flex-wrap: wrap; gap: 8px; }
+  .container { padding: 16px 12px 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="logo">
+    <span class="logo-puck">🏒</span>
+    <span class="logo-text">NHL <em>Trade Tracker</em></span>
+  </div>
+  <div class="live-badge loading" id="live-badge">
+    <div class="pulse"></div>
+    <span id="live-text">Connecting</span>
+  </div>
+  <div class="header-right">
+    <button class="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
+  </div>
+</header>
+
+<!-- ═══ NOTIFICATION BANNER ═══ -->
+<div id="notif-banner">
+  <div class="nb-icon">🔔</div>
+  <div class="nb-text">
+    <strong>Get push notifications</strong> — get alerted the moment a trade drops, even when this tab is in the background
+  </div>
+  <button class="notif-btn" id="notif-btn" onclick="requestNotifications()">Enable Alerts</button>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Trades Found</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub" id="stat-period">in selected period</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Today</div>
+      <div class="stat-value" id="stat-today">—</div>
+      <div class="stat-sub">trades so far</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last Refresh</div>
+      <div class="stat-value" id="stat-refresh" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="stat-sub">checks every 2 min</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row" id="filter-row">
+    <button class="filter-btn active" data-days="1"  onclick="setFilter(this,1)">Today</button>
+    <button class="filter-btn"        data-days="3"  onclick="setFilter(this,3)">3 Days</button>
+    <button class="filter-btn"        data-days="7"  onclick="setFilter(this,7)">7 Days</button>
+    <button class="filter-btn"        data-days="30" onclick="setFilter(this,30)">30 Days</button>
+  </div>
+
+  <!-- Section header -->
+  <div class="section-header">
+    <span class="section-title">Recent Trades</span>
+    <span class="section-count" id="count-label">—</span>
+  </div>
+
+  <!-- Trades list -->
+  <div id="trades-area">
+    <div class="state-box">
+      <div class="spinner"></div>
+      <h3>Loading trade data…</h3>
+      <p>Fetching the latest NHL transaction data from the official API.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer" id="footer-text">
+    Data sourced from the NHL public API · Polling every 2 minutes
+  </div>
+
+</div><!-- /container -->
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+const POLL_MS      = 2 * 60 * 1000;  // 2 minutes
+const MAX_DAYS     = 30;
+const NHL_BASE     = 'https://api-web.nhle.com/v1';
+
+// Known trade-type codes in the NHL API
+const TRADE_CODES  = new Set(['TRADE', 'ET', 'TR', 'PL']);
+
+// CORS proxy — used only if direct NHL API is blocked
+const CORS_PROXY   = 'https://corsproxy.io/?url=';
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currentDays  = 1;
+let allTrades    = [];         // all fetched trades (sorted newest first)
+let pollTimer    = null;
+let isPolling    = false;
+let dataSource   = 'NHL';
+
+// Seen trade IDs persisted across page loads
+const seenIds = new Set(
+  JSON.parse(localStorage.getItem('nhltt_seen') || '[]')
+);
+
+// ══════════════════════════════════════════════
+//  DATE HELPERS
+// ══════════════════════════════════════════════
+function toISO(d)     { return d.toISOString().slice(0, 10); }         // YYYY-MM-DD
+function toCompact(d) { return toISO(d).replace(/-/g, ''); }           // YYYYMMDD
+function daysBack(n)  { const d = new Date(); d.setDate(d.getDate() - n); return d; }
+
+function relativeDate(isoStr) {
+  if (!isoStr) return '';
+  const today = toISO(new Date());
+  const yest  = toISO(daysBack(1));
+  const d     = isoStr.slice(0, 10);
+  if (d === today) return 'Today';
+  if (d === yest)  return 'Yesterday';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ══════════════════════════════════════════════
+//  NHL API  —  fetch one date
+// ══════════════════════════════════════════════
+async function fetchDay(compact) {
+  // Try direct first; fall back to CORS proxy
+  const endpoints = [
+    `${NHL_BASE}/transactions/${compact}`,
+    `${CORS_PROXY}${encodeURIComponent(`${NHL_BASE}/transactions/${compact}`)}`,
+  ];
+
+  for (const url of endpoints) {
+    try {
+      const r = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!r.ok) continue;
+      const json = await r.json();
+
+      // corsproxy wraps content sometimes
+      if (json.contents) {
+        try { return JSON.parse(json.contents); } catch {}
+      }
+      return json;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════
+//  PARSE  —  normalise a raw transaction object
+// ══════════════════════════════════════════════
+function normaliseTrade(tx) {
+  const typeCode = String(tx.typeCode || tx.type || '').toUpperCase().trim();
+  const desc     = String(tx.description || '').toLowerCase();
+
+  const looksTrade =
+    TRADE_CODES.has(typeCode) ||
+    desc.includes('traded') ||
+    desc.includes('acquired') ||
+    desc.includes('in exchange');
+
+  if (!looksTrade) return null;
+
+  // Date — API can return YYYYMMDD or YYYY-MM-DD
+  let rawDate = tx.tradedOn || tx.transactionDate || tx.date || '';
+  if (rawDate.length === 8) {
+    rawDate = `${rawDate.slice(0,4)}-${rawDate.slice(4,6)}-${rawDate.slice(6,8)}`;
+  }
+
+  // Player name
+  let playerName = '';
+  if (tx.player) {
+    playerName = [tx.player.firstName, tx.player.lastName]
+      .filter(Boolean).join(' ') || tx.player.fullName || '';
+  } else if (tx.firstName) {
+    playerName = `${tx.firstName} ${tx.lastName || ''}`.trim();
+  }
+
+  // Teams
+  const fromAbbr = tx.fromTeam?.abbrev || tx.fromTeam?.triCode || tx.fromTeam?.name || '';
+  const toAbbr   = tx.toTeam?.abbrev   || tx.toTeam?.triCode   || tx.toTeam?.name   || '';
+
+  // Build readable description if the API didn't provide one
+  let description = tx.description || '';
+  if (!description) {
+    description = playerName
+      ? `${playerName} traded${fromAbbr ? ' from ' + fromAbbr : ''}${toAbbr ? ' to ' + toAbbr : ''}`
+      : `Trade: ${fromAbbr || '?'} → ${toAbbr || '?'}`;
+  }
+
+  return {
+    id:          String(tx.id || tx.transactionId || Math.random().toString(36).slice(2)),
+    date:        rawDate,
+    description,
+    fromTeam:    fromAbbr,
+    toTeam:      toAbbr,
+    playerName,
+    typeCode,
+  };
+}
+
+// ══════════════════════════════════════════════
+//  FETCH TRADES  —  for the last N days
+// ══════════════════════════════════════════════
+async function fetchTrades(days) {
+  const trades = [];
+  const seen   = new Set();
+
+  for (let i = 0; i < days; i++) {
+    const compact = toCompact(daysBack(i));
+    let data;
+    try { data = await fetchDay(compact); } catch { data = null; }
+
+    if (!data) continue;
+
+    const txList = Array.isArray(data.transactions)
+      ? data.transactions
+      : Array.isArray(data.data)
+        ? data.data
+        : [];
+
+    for (const tx of txList) {
+      const trade = normaliseTrade(tx);
+      if (trade && !seen.has(trade.id)) {
+        seen.add(trade.id);
+        trades.push(trade);
+      }
+    }
+  }
+
+  return trades.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// ══════════════════════════════════════════════
+//  NOTIFICATIONS
+// ══════════════════════════════════════════════
+function canNotify() {
+  return 'Notification' in window && Notification.permission === 'granted';
+}
+
+async function requestNotifications() {
+  if (!('Notification' in window)) {
+    alert('Your browser does not support desktop notifications.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    localStorage.setItem('nhltt_notif', '1');
+    updateNotifBanner();
+    new Notification('🏒 NHL Trade Tracker', {
+      body: "You're all set — we'll notify you the moment a trade is reported.",
+      icon: '/favicon.ico',
+      tag:  'nhltt-welcome',
+    });
+  } else {
+    updateNotifBanner();
+  }
+}
+
+function notify(trade) {
+  if (!canNotify()) return;
+
+  const title = `🔔 NHL Trade: ${trade.playerName || 'New deal'}`;
+  const body  = [
+    trade.fromTeam && trade.toTeam ? `${trade.fromTeam} → ${trade.toTeam}` : '',
+    trade.description,
+  ].filter(Boolean).join('\n');
+
+  const n = new Notification(title, {
+    body:             body.slice(0, 200),
+    tag:              `nhltt-${trade.id}`,
+    requireInteraction: true,
+    renotify:         false,
+  });
+
+  n.onclick = () => { window.focus(); n.close(); };
+}
+
+function updateNotifBanner() {
+  const banner = document.getElementById('notif-banner');
+  const btn    = document.getElementById('notif-btn');
+
+  if (!('Notification' in window)) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    banner.classList.add('hidden');
+  } else if (perm === 'denied') {
+    document.querySelector('#notif-banner .nb-text').innerHTML =
+      'Notifications are <strong>blocked</strong> for this page. Enable them in your browser/OS settings to get trade alerts.';
+    btn.textContent = 'Blocked';
+    btn.disabled    = true;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  LIVE STATUS
+// ══════════════════════════════════════════════
+function setStatus(state) {
+  // state: 'loading' | 'live' | 'error'
+  const badge = document.getElementById('live-badge');
+  const text  = document.getElementById('live-text');
+  badge.className = 'live-badge ' + state;
+  text.textContent = state === 'loading' ? 'Updating…'
+                   : state === 'error'   ? 'Error — retrying'
+                   :                       'Live';
+}
+
+// ══════════════════════════════════════════════
+//  UI — RENDER TRADES
+// ══════════════════════════════════════════════
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTrades() {
+  const cutoff   = toISO(daysBack(currentDays));
+  const filtered = allTrades.filter(t => t.date.slice(0,10) >= cutoff);
+  const todayStr = toISO(new Date());
+  const today    = allTrades.filter(t => t.date.slice(0,10) === todayStr).length;
+
+  document.getElementById('stat-total').textContent   = filtered.length;
+  document.getElementById('stat-today').textContent   = today;
+  document.getElementById('stat-period').textContent  =
+    `in last ${currentDays === 1 ? '24 h' : currentDays + ' days'}`;
+  document.getElementById('count-label').textContent  =
+    `${filtered.length} trade${filtered.length !== 1 ? 's' : ''}`;
+
+  const area = document.getElementById('trades-area');
+
+  if (filtered.length === 0) {
+    area.innerHTML = `
+      <div class="state-box">
+        <div class="icon">🏒</div>
+        <h3>No trades in this window</h3>
+        <p>No trades detected in the last ${currentDays === 1 ? '24 hours' : currentDays + ' days'}.
+        The tracker refreshes automatically every 2 minutes.</p>
+      </div>`;
+    return;
+  }
+
+  const cards = filtered.map(t => {
+    const isNew = t._new;
+    return `
+    <div class="trade-card${isNew ? ' is-new' : ''}">
+      <div class="trade-top">
+        <span class="badge badge-trade">TRADE</span>
+        ${isNew ? '<span class="badge badge-new">✦ Just in</span>' : ''}
+        <span class="trade-date">${relativeDate(t.date)}</span>
+      </div>
+      <div class="trade-desc">${esc(t.description)}</div>
+      ${(t.fromTeam || t.toTeam || t.playerName) ? `
+      <div class="trade-teams">
+        ${t.fromTeam ? `<span class="team-pill">${esc(t.fromTeam)}</span>` : ''}
+        ${t.fromTeam && t.toTeam ? '<span class="arrow">→</span>' : ''}
+        ${t.toTeam   ? `<span class="team-pill">${esc(t.toTeam)}</span>` : ''}
+        ${t.playerName ? `<span class="trade-player">${esc(t.playerName)}</span>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  area.innerHTML = `<div class="trades-list">${cards}</div>`;
+}
+
+// ══════════════════════════════════════════════
+//  FILTER
+// ══════════════════════════════════════════════
+function setFilter(btn, days) {
+  currentDays = days;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrades();
+}
+
+// ══════════════════════════════════════════════
+//  POLL
+// ══════════════════════════════════════════════
+async function poll() {
+  if (isPolling) return;
+  isPolling = true;
+  clearTimeout(pollTimer);
+  setStatus('loading');
+
+  try {
+    const daysToFetch = Math.min(Math.max(currentDays, 3), MAX_DAYS);
+    const fresh = await fetchTrades(daysToFetch);
+
+    // Detect new trades since last poll
+    const newTrades = [];
+    for (const t of fresh) {
+      if (!seenIds.has(t.id)) {
+        t._new = true;
+        newTrades.push(t);
+        seenIds.add(t.id);
+      }
+    }
+
+    // Persist seen IDs (cap at 2000)
+    const arr = [...seenIds].slice(-2000);
+    try { localStorage.setItem('nhltt_seen', JSON.stringify(arr)); } catch {}
+
+    // Send notifications
+    for (const t of newTrades) notify(t);
+
+    allTrades = fresh;
+    renderTrades();
+    setStatus('live');
+
+    const now = timeNow();
+    document.getElementById('stat-refresh').textContent = now;
+    document.getElementById('footer-text').textContent =
+      `Data from NHL public API · Last updated ${now} · Refreshes every 2 min`;
+
+    // Flash page title for new trades
+    if (newTrades.length > 0) {
+      document.title = `(${newTrades.length} new) 🏒 NHL Trade Tracker`;
+      setTimeout(() => { document.title = '🏒 NHL Trade Tracker'; }, 12000);
+    }
+
+  } catch (err) {
+    console.error('[NHL Tracker] Poll error:', err);
+    setStatus('error');
+
+    if (allTrades.length === 0) {
+      document.getElementById('trades-area').innerHTML = `
+        <div class="state-box">
+          <div class="icon">⚠️</div>
+          <h3>Couldn't reach the NHL API</h3>
+          <p>Check your internet connection. The tracker will retry automatically in 2 minutes.<br>
+          <small style="margin-top:8px;display:block;color:#3d5070">${err.message || ''}</small></p>
+        </div>`;
+    }
+  } finally {
+    isPolling = false;
+    pollTimer = setTimeout(poll, POLL_MS);
+  }
+}
+
+function manualRefresh() {
+  clearTimeout(pollTimer);
+  poll();
+}
+
+// ══════════════════════════════════════════════
+//  VISIBILITY  —  refresh immediately on return
+// ══════════════════════════════════════════════
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    clearTimeout(pollTimer);
+    poll();
+  }
+});
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+updateNotifBanner();
+poll();
+</script>
+</body>
+</html>
