@@ -200,38 +200,45 @@ header {
 }
 
 .team-side {
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  gap: 7px; padding: 20px 14px 18px;
-  background: transparent; border: none; color: inherit;
-  cursor: pointer; text-align: center; width: 100%;
-  position: relative; overflow: hidden;
-  transition: background .2s;
+  position: relative; min-height: 184px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  overflow: hidden; text-align: center;
 }
-.team-side.left  { background: linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,0) 70%); }
-.team-side.right { background: linear-gradient(225deg, rgba(255,255,255,.045), rgba(255,255,255,0) 70%); }
-.team-side.clickable:hover { background: rgba(0,180,216,.09); }
-.team-side.clickable:hover .ts-hint { color: var(--accent); }
-.team-side[data-action="none"] { cursor: default; }
-
-.big-logo {
-  width: 86px; height: 86px; object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.55));
+/* logo fills the entire half, edge-to-edge */
+.ts-logo-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;            /* fill the half completely */
+  padding: 14px;                /* small breathing room from edges */
+  opacity: .92;
 }
-.big-logo-fallback {
-  width: 86px; height: 86px; display: flex; align-items: center; justify-content: center;
-  font-size: 2.4rem; opacity: .3;
+.ts-logo-fallback {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; opacity: .25; padding: 0;
 }
-.ts-name {
-  font-size: .9rem; font-weight: 700; color: var(--text); line-height: 1.25;
+/* readability scrim + info, overlaid at the bottom of the logo */
+.ts-overlay {
+  position: relative; z-index: 2;
+  width: 100%; padding: 36px 12px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: linear-gradient(to top,
+    rgba(8,12,24,.97) 28%, rgba(8,12,24,.78) 55%, rgba(8,12,24,0));
 }
 .ts-abbr { font-size: .66rem; font-weight: 800; letter-spacing: 1.5px; color: var(--text-muted); }
+.ts-name { font-size: .9rem; font-weight: 700; color: var(--text); line-height: 1.25; }
 .ts-role {
   font-size: .64rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
-  margin-top: 2px;
 }
 .ts-role.acquires { color: var(--green); }
 .ts-role.loses    { color: var(--red); }
-.ts-hint { font-size: .6rem; color: var(--text-muted); transition: color .2s; }
+.lineup-btn {
+  margin-top: 8px;
+  background: rgba(0,180,216,.16); border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 6px; padding: 6px 14px;
+  font-size: .72rem; font-weight: 700; cursor: pointer;
+  transition: all .18s;
+}
+.lineup-btn:hover { background: var(--accent); color: #000; }
 
 /* center divider + arrow + player */
 .trade-mid {
@@ -401,12 +408,13 @@ header {
   .stat-card:last-child { grid-column: span 2; }
   header { padding: 0 14px; }
   .container { padding: 14px 10px 40px; }
-  /* keep both teams side-by-side on mobile, just tighten the center */
+  /* keep both teams side-by-side on mobile */
   .trade-teams { grid-template-columns: 1fr auto 1fr; }
-  .team-side { padding: 16px 8px 14px; gap: 5px; }
-  .big-logo, .big-logo-fallback { width: 60px; height: 60px; }
-  .ts-name { font-size: .76rem; }
-  .ts-hint { display: none; }
+  .team-side { min-height: 150px; }
+  .ts-logo-bg { padding: 10px; }
+  .ts-overlay { padding: 28px 6px 12px; }
+  .ts-name { font-size: .74rem; }
+  .lineup-btn { padding: 5px 10px; font-size: .68rem; }
   .trade-mid { padding: 0 4px; }
   .modal-head { gap: 12px; padding: 16px; }
   .modal-body { padding: 14px 16px; }
@@ -582,28 +590,62 @@ function normAbbrev(a) {
   return up;  // unknown — still shown as text, logo will fade if missing
 }
 
+// Explicit search aliases per team (lowercase). Transaction text uses any of
+// these — city only ("Toronto"), nickname only ("Predators"), or full name.
+const MATCH_TERMS = {
+  ANA: ['anaheim', 'ducks'],
+  BOS: ['boston', 'bruins'],
+  BUF: ['buffalo', 'sabres'],
+  CGY: ['calgary', 'flames'],
+  CAR: ['carolina', 'hurricanes', 'canes'],
+  CHI: ['chicago', 'blackhawks'],
+  COL: ['colorado', 'avalanche', 'avs'],
+  CBJ: ['columbus', 'blue jackets'],
+  DAL: ['dallas', 'stars'],
+  DET: ['detroit', 'red wings'],
+  EDM: ['edmonton', 'oilers'],
+  FLA: ['florida', 'panthers'],
+  LAK: ['los angeles', 'la kings', 'kings'],
+  MIN: ['minnesota', 'wild'],
+  MTL: ['montreal', 'montréal', 'canadiens', 'habs'],
+  NSH: ['nashville', 'predators', 'preds'],
+  NJD: ['new jersey', 'devils'],
+  NYI: ['islanders'],
+  NYR: ['rangers'],
+  OTT: ['ottawa', 'senators', 'sens'],
+  PHI: ['philadelphia', 'flyers'],
+  PIT: ['pittsburgh', 'penguins', 'pens'],
+  SEA: ['seattle', 'kraken'],
+  SJS: ['san jose', 'sharks'],
+  STL: ['st. louis', 'st louis', 'blues'],
+  TBL: ['tampa bay', 'tampa', 'lightning', 'bolts'],
+  TOR: ['toronto', 'maple leafs', 'leafs'],
+  UTA: ['utah', 'mammoth', 'hockey club'],
+  VAN: ['vancouver', 'canucks'],
+  VGK: ['vegas', 'golden knights', 'knights'],
+  WSH: ['washington', 'capitals', 'caps'],
+  WPG: ['winnipeg', 'jets'],
+};
+
 // Scan free text for every team mentioned, in order of first appearance.
-// Also matches bare 3-letter abbreviations so single-team rows still resolve.
 function teamsListFromText(text) {
   if (!text) return [];
+  const lower = text.toLowerCase();
   const hits = [];
-  for (const [abbr, info] of Object.entries(TEAMS)) {
-    const parts = info.name.split(' ');
-    const nick  = parts[parts.length - 1];          // "Oilers"
-    const city  = parts.slice(0, -1).join(' ');     // "Edmonton"
-    let idx = text.indexOf(info.name);
-    if (idx < 0 && nick) idx = text.indexOf(nick);
-    if (idx < 0 && city.length > 3) idx = text.indexOf(city);
-    if (idx < 0) {                                   // bare abbreviation, word-bounded
-      const m = new RegExp(`\\b${abbr}\\b`).exec(text);
-      if (m) idx = m.index;
+  for (const [abbr, terms] of Object.entries(MATCH_TERMS)) {
+    let best = -1;
+    for (const term of terms) {
+      const idx = lower.indexOf(term);
+      if (idx >= 0 && (best < 0 || idx < best)) best = idx;
     }
-    if (idx >= 0) hits.push({ abbr, idx });
+    if (best < 0) {                                   // bare abbreviation, word-bounded
+      const m = new RegExp(`\\b${abbr.toLowerCase()}\\b`).exec(lower);
+      if (m) best = m.index;
+    }
+    if (best >= 0) hits.push({ abbr, idx: best });
   }
   hits.sort((a, b) => a.idx - b.idx);
-  const seen = new Set(), order = [];
-  for (const h of hits) if (!seen.has(h.abbr)) { seen.add(h.abbr); order.push(h.abbr); }
-  return order;
+  return hits.map(h => h.abbr);
 }
 
 // Fill any missing from/to side from the description, never duplicating a known team.
@@ -935,8 +977,8 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// One side of the split card. Uses data-attributes only (no inline JS) so
-// nothing can break HTML attribute quoting — clicks are handled by delegation.
+// One side of the split card. The team logo fills the whole half edge-to-edge
+// as a background; a dedicated "View Lineup" button opens the lineup modal.
 function teamSide(abbrev, side, role) {
   const name      = getTeamName(abbrev) || 'Unknown team';
   const known     = abbrev && TEAMS[abbrev];
@@ -944,19 +986,22 @@ function teamSide(abbrev, side, role) {
   const roleClass = role === 'acquires' ? 'acquires' : 'loses';
   const roleLabel = role === 'acquires' ? '▼ Acquires' : '▲ Trades away';
 
-  const logo = logoUrl
-    ? `<img class="big-logo" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.outerHTML='<div class=\\'big-logo-fallback\\'>🏒</div>'">`
-    : `<div class="big-logo-fallback">🏒</div>`;
+  const bg = logoUrl
+    ? `<img class="ts-logo-bg" src="${esc(logoUrl)}" alt="${esc(abbrev)}" loading="lazy" onerror="this.remove()">`
+    : `<div class="ts-logo-bg ts-logo-fallback">🏒</div>`;
 
   return `
-  <button class="team-side ${side}${known ? ' clickable' : ''}"
-          data-action="${known ? 'lineup' : 'none'}" data-abbrev="${esc(abbrev || '')}">
-    ${logo}
-    ${abbrev ? `<span class="ts-abbr">${esc(abbrev)}</span>` : ''}
-    <span class="ts-name">${esc(name)}</span>
-    <span class="ts-role ${roleClass}">${roleLabel}</span>
-    ${known ? '<span class="ts-hint">Click for lineup ↗</span>' : ''}
-  </button>`;
+  <div class="team-side ${side}">
+    ${bg}
+    <div class="ts-overlay">
+      ${abbrev ? `<span class="ts-abbr">${esc(abbrev)}</span>` : ''}
+      <span class="ts-name">${esc(name)}</span>
+      <span class="ts-role ${roleClass}">${roleLabel}</span>
+      ${known
+        ? `<button class="lineup-btn" data-action="lineup" data-abbrev="${esc(abbrev)}">📋 View Lineup</button>`
+        : ''}
+    </div>
+  </div>`;
 }
 
 function tradeCard(t) {
